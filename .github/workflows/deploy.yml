@@ -1,0 +1,62 @@
+name: Laravel CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        tools: composer
+
+    - name: Deploy to AWS EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu 
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Navigate to the project directory
+          cd /var/www/payroll-api
+          
+          # Step 1: Pull the latest changes from the main branch
+          sudo git pull https://x-access-token:${{ secrets.TOKEN_GITHUB }}@github.com/blackfrankwhite/payroll-api.git main
+          sudo git stash pop || true
+
+          # Step 2: Install composer dependencies
+          export COMPOSER_ALLOW_SUPERUSER=1
+          sudo composer install --no-interaction --optimize-autoloader
+
+          # Step 3: Run database migrations
+          # sudo php artisan migrate --force
+
+          # Step 4: Clear caches and optimize Laravel
+          sudo php artisan cache:clear
+          sudo php artisan config:cache
+          sudo php artisan route:cache
+          sudo php artisan view:cache
+
+          # Step 5: Fix file and folder permissions
+          sudo chown -R ubuntu:www-data /var/www/payroll-api
+          sudo find /var/www/payroll-api/storage -type f -exec chmod 664 {} \;
+          sudo find /var/www/payroll-api/storage -type d -exec chmod 775 {} \;
+          sudo find /var/www/payroll-api/bootstrap/cache -type f -exec chmod 664 {} \;
+          sudo find /var/www/payroll-api/bootstrap/cache -type d -exec chmod 775 {} \;
+          
+          # Ensure the log file exists and is writable
+          sudo truncate -s 0 /var/www/payroll-api/storage/logs/laravel.log
+          sudo chmod 664 /var/www/payroll-api/storage/logs/laravel.log
+
+          # Step 6: Restart necessary services
+          sudo systemctl restart nginx
+          sudo systemctl restart php8.3-fpm
