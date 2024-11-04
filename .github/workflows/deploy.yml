@@ -38,7 +38,7 @@ jobs:
           sudo composer install --no-interaction --optimize-autoloader
 
           # Step 3: Run database migrations
-          # sudo php artisan migrate --force
+          sudo php artisan migrate --force
 
           # Step 4: Clear caches and optimize Laravel
           sudo php artisan cache:clear
