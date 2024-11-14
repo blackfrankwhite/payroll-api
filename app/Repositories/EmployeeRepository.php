@@ -7,7 +7,7 @@ use App\Models\CompanyUser;
 use App\Models\User;
 use App\Models\Employee;
 
-class EmployeRepository
+class EmployeeRepository
 {
     public function addEmployee($user, $employeeData)
     {

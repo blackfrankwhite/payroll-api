@@ -7,6 +7,8 @@ use App\Repositories\CompanyRepository;
 use App\Repositories\CompanyUserRepository;
 use App\Repositories\EmployeeRepository;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TestEmail; 
 
 class CompanyController extends Controller
 {
@@ -96,5 +98,12 @@ class CompanyController extends Controller
         $user = $request->user();
 
         return $this->employeeRepository->getEmployeeByID($user, $employeeID);
+    }
+
+    public function inviteCompanyUser(Request $request)
+    {
+        Mail::to('gugaxachvani@gmail.com')->send(new TestEmail());
+
+        return 'Test email sent!';
     }
 }
