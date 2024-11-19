@@ -1,110 +1,55 @@
-<?php 
+<?php
 
 namespace App\Repositories;
 
-use App\Models\Company;
-use App\Models\CompanyUser;
-use App\Models\User;
 use App\Models\Employee;
 
 class EmployeeRepository
 {
-    public function addEmployee($user, $employeeData)
+    public function addEmployee(array $employeeData)
     {
-        $companyUser = CompanyUser::where('user_id', $user->id)->first();
-
-        if (!$companyUser) {
-            return response()->json(['error' => 'User does not have a company'], 422);
-        }
-
-        $employeeData['company_id'] = $companyUser->company_id;
-
-        $employee = Employee::create($employeeData);
-
-        return response()->json([
-            'employee' => $employee,
-        ], 201);
+        return Employee::create($employeeData);
     }
 
-    public function getEmployees($user)
+    public function getEmployeesByCompanyId(int $companyId)
     {
-        $companyUser = CompanyUser::where('user_id', $user->id)->first();
-
-        if (!$companyUser) {
-            return response()->json(['error' => 'User does not have a company'], 422);
-        }
-
-        $employees = Employee::where('company_id', $companyUser->company_id)->get();
-
-        return response()->json([
-            'employees' => $employees,
-        ], 200);
+        return Employee::where('company_id', $companyId)->get();
     }
 
-    public function updateEmployee($user, $employeeID, $employeeData)
+    public function updateEmployee(int $companyId, int $employeeID, array $employeeData)
     {
-        $companyUser = CompanyUser::where('user_id', $user->id)->first();
-
-        if (!$companyUser) {
-            return response()->json(['error' => 'User does not have a company'], 422);
-        }
-
-        $employee = Employee::where('company_id', $companyUser->company_id)
-            ->where('id', $employeeID)
-            ->first();
-
-        if (!$employee) {
-            return response()->json(['error' => 'Employee not found'], 404);
-        }
-
+        $employee = $this->findEmployee($companyId, $employeeID);
         $employee->update($employeeData);
 
-        return response()->json([
-            'employee' => $employee,
-        ], 200);
+        return $employee;
     }
 
-    public function deleteEmployee($user, $employeeID)
+    public function deleteEmployee(int $companyId, int $employeeID)
     {
-        $companyUser = CompanyUser::where('user_id', $user->id)->first();
-
-        if (!$companyUser) {
-            return response()->json(['error' => 'User does not have a company'], 422);
-        }
-
-        $employee = Employee::where('company_id', $companyUser->company_id)
-            ->where('id', $employeeID)
-            ->first();
-
-        if (!$employee) {
-            return response()->json(['error' => 'Employee not found'], 404);
-        }
-
+        $employee = $this->findEmployee($companyId, $employeeID);
         $employee->delete();
-
-        return response()->json([
-            'message' => 'Employee deleted successfully',
-        ], 200);
     }
 
-    public function getEmployeeByID($user, $employeeID)
+    public function getEmployeeById(int $companyId, int $employeeID)
     {
-        $companyUser = CompanyUser::where('user_id', $user->id)->first();
+        return $this->findEmployee($companyId, $employeeID);
+    }
 
-        if (!$companyUser) {
-            return response()->json(['error' => 'User does not have a company'], 422);
-        }
-
-        $employee = Employee::where('company_id', $companyUser->company_id)
+    private function findEmployee(int $companyId, int $employeeID)
+    {
+        return Employee::where('company_id', $companyId)
             ->where('id', $employeeID)
-            ->first();
+            ->firstOrFail();
+    }
 
-        if (!$employee) {
-            return response()->json(['error' => 'Employee not found'], 404);
-        }
-
-        return response()->json([
-            'employee' => $employee,
-        ], 200);
+    public function getEmployeeByIdAndUser(int $employeeID, int $userId)
+    {
+        return Employee::where('id', $employeeID)
+            ->where('company_id', function ($query) use ($userId) {
+                $query->select('company_id')
+                    ->from('company_users')
+                    ->where('user_id', $userId);
+            })
+            ->firstOrFail();
     }
 }

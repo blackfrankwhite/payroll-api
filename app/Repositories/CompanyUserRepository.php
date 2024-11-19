@@ -1,16 +1,19 @@
-<?php 
+<?php
 
 namespace App\Repositories;
 
-use App\Models\Company;
 use App\Models\CompanyUser;
-use App\Models\User;
-use App\Models\Employee;
 
 class CompanyUserRepository
 {
-    public function inviteUser($email, $companyID, $role)
+    /**
+     * Retrieve the company user by user ID.
+     *
+     * @param int $userId
+     * @return CompanyUser
+     */
+    public function getCompanyUserByUserId(int $userId): CompanyUser
     {
-        
+        return CompanyUser::where('user_id', $userId)->firstOrFail();
     }
 }
