@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\BenefitController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -28,6 +29,14 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('{salaryID}', [SalaryController::class, 'show']);
                 Route::put('{salaryID}', [SalaryController::class, 'update']);
                 Route::delete('{salaryID}', [SalaryController::class, 'destroy']);
+            });
+
+            Route::prefix('{employeeID}/benefits')->group(function () {
+                Route::post('/', [BenefitController::class, 'store']);
+                Route::get('/', [BenefitController::class, 'index']);
+                Route::get('{benefitID}', [BenefitController::class, 'show']);
+                Route::put('{benefitID}', [BenefitController::class, 'update']);
+                Route::delete('{benefitID}', [BenefitController::class, 'destroy']);
             });
         });
     });
