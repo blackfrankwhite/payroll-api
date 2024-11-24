@@ -38,6 +38,14 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::put('{benefitID}', [BenefitController::class, 'update']);
                 Route::delete('{benefitID}', [BenefitController::class, 'destroy']);
             });
+
+            Route::prefix('{employeeID}/deductions')->group(function () {
+                Route::post('/', [BenefitController::class, 'store']);
+                Route::get('/', [BenefitController::class, 'index']);
+                Route::get('{deductionID}', [BenefitController::class, 'show']);
+                Route::put('{deductionID}', [BenefitController::class, 'update']);
+                Route::delete('{deductionID}', [BenefitController::class, 'destroy']);
+            });
         });
     });
 });
