@@ -18,10 +18,20 @@ class EmployeeController extends Controller
     public function addEmployee(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:employees',
+            'name' => 'sometimes|nullable|string|max:255',
             'phone' => 'sometimes|nullable|string|max:255',
             'position' => 'sometimes|nullable|string|max:255',
+            'email' => 'sometimes|nullable|string|email|max:255|unique:employees',
+            'id_number' => 'sometimes|nullable|string|max:255',
+            'surname' => 'sometimes|nullable|string|max:255',
+            'gender' => 'sometimes|nullable|string|max:255',
+            'birth_date' => 'sometimes|nullable|date',
+            'bank_account' => 'sometimes|nullable|string|max:255',
+            'residency' => 'sometimes|nullable|string|max:255',
+            'address' => 'sometimes|nullable|string|max:255',
+            'start_date' => 'sometimes|nullable|date',
+            'end_date' => 'sometimes|nullable|date',
+            'pension' => 'sometimes|nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -46,6 +56,17 @@ class EmployeeController extends Controller
             'name' => 'sometimes|nullable|string|max:255',
             'phone' => 'sometimes|nullable|string|max:255',
             'position' => 'sometimes|nullable|string|max:255',
+            'email' => 'sometimes|nullable|string|email|max:255|unique:employees',
+            'id_number' => 'sometimes|nullable|string|max:255',
+            'surname' => 'sometimes|nullable|string|max:255',
+            'gender' => 'sometimes|nullable|string|max:255',
+            'birth_date' => 'sometimes|nullable|date',
+            'bank_account' => 'sometimes|nullable|string|max:255',
+            'residency' => 'sometimes|nullable|string|max:255',
+            'address' => 'sometimes|nullable|string|max:255',
+            'start_date' => 'sometimes|nullable|date',
+            'end_date' => 'sometimes|nullable|date',
+            'pension' => 'sometimes|nullable|boolean',
         ]);
 
         if ($validator->fails()) {

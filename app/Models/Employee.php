@@ -16,5 +16,15 @@ class Employee extends Model
         'name',
         'email',
         'phone',
+        'id_number',
+        'surname',
+        'gender',
+        'birth_date',
+        'bank_account',
+        'residency',
+        'address',
+        'start_date',
+        'end_date',
+        'pension',
     ];
 }
