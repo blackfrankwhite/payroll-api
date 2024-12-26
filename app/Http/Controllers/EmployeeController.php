@@ -56,7 +56,7 @@ class EmployeeController extends Controller
             'name' => 'sometimes|nullable|string|max:255',
             'phone' => 'sometimes|nullable|string|max:255',
             'position' => 'sometimes|nullable|string|max:255',
-            'email' => 'sometimes|nullable|string|email|max:255|unique:employees',
+            'email' => 'sometimes|nullable|string|email|max:255',
             'id_number' => 'sometimes|nullable|string|max:255',
             'surname' => 'sometimes|nullable|string|max:255',
             'gender' => 'sometimes|nullable|string|max:255',

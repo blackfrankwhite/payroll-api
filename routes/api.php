@@ -7,6 +7,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\BenefitController;
+use App\Http\Controllers\DeductionController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -40,11 +41,11 @@ Route::middleware('auth:sanctum')->group(function () {
             });
 
             Route::prefix('{employeeID}/deductions')->group(function () {
-                Route::post('/', [BenefitController::class, 'store']);
-                Route::get('/', [BenefitController::class, 'index']);
-                Route::get('{deductionID}', [BenefitController::class, 'show']);
-                Route::put('{deductionID}', [BenefitController::class, 'update']);
-                Route::delete('{deductionID}', [BenefitController::class, 'destroy']);
+                Route::post('/', [DeductionController::class, 'store']);
+                Route::get('/', [DeductionController::class, 'index']);
+                Route::get('{deductionID}', [DeductionController::class, 'show']);
+                Route::put('{deductionID}', [DeductionController::class, 'update']);
+                Route::delete('{deductionID}', [DeductionController::class, 'destroy']);
             });
         });
     });
