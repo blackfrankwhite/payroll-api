@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\SalaryService;
+use App\Http\Resources\SalaryResource;
 
 class SalaryController extends Controller
 {
@@ -19,7 +20,7 @@ class SalaryController extends Controller
         $userId = $request->user()->id;
         $employeeID = $request->route('employeeID');
         $salaries = $this->salaryService->getSalaries($userId, $employeeID);
-        return response()->json(['salaries' => $salaries]);
+        return SalaryResource::collection($salaries);
     }
 
     public function store(Request $request, $employeeID)
@@ -48,7 +49,8 @@ class SalaryController extends Controller
         $userId = $request->user()->id;
         $employeeID = $request->route('employeeID');
         $salary = $this->salaryService->addSalary($userId, $employeeID, $validator->validated());
-        return response()->json(['salary' => $salary], 201);
+
+        return new SalaryResource($salary);
     }
 
     public function show(Request $request, $employeeID, $salaryID)
@@ -57,7 +59,7 @@ class SalaryController extends Controller
         $employeeID = $request->route('employeeID');
         $salaryID = $request->route('salaryID');
         $salary = $this->salaryService->getSalary($userId, $employeeID, $salaryID);
-        return response()->json(['salary' => $salary]);
+        return new SalaryResource($salary);
     }
 
     public function update(Request $request, $employeeID, $salaryID)
@@ -88,7 +90,7 @@ class SalaryController extends Controller
 
         $userId = $request->user()->id;
         $salary = $this->salaryService->updateSalary($userId, $employeeID, $salaryID, $validator->validated());
-        return response()->json(['salary' => $salary]);
+        return new SalaryResource($salary);
     }
 
     public function destroy(Request $request, $employeeID, $salaryID)

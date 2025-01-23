@@ -23,6 +23,12 @@ class Salary extends Model
         'daily_working_hours'
     ];
 
+    protected $casts = [
+        'includes_income_tax' => 'boolean',
+        'includes_employee_pension' => 'boolean',
+        'includes_company_pension' => 'boolean',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);
@@ -38,3 +44,5 @@ class Salary extends Model
         return $this->hasMany(NonWorkingCustomDate::class);
     }
 }
+
+
