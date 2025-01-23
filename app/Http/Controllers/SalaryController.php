@@ -28,7 +28,8 @@ class SalaryController extends Controller
         $validator = \Validator::make($request->all(), [
             'type' => 'required|in:monthly,daily,hourly,annually',
             'amount' => 'required|numeric',
-            'currency' => 'required|string|size:3',
+            'payment_currency' => 'required|string|size:3',
+            'calculation_currency' => 'required|string|size:3',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'includes_income_tax' => 'sometimes|boolean',
@@ -70,8 +71,8 @@ class SalaryController extends Controller
         $validator = \Validator::make($request->all(), [
             'type' => 'sometimes|in:monthly,daily,hourly,annually',
             'amount' => 'sometimes|numeric',
-            'currency' => 'sometimes|string|size:3',
-            'start_date' => 'sometimes|date',
+            'payment_currency' => 'sometimes|string|size:3',
+            'calculation_currency' => 'sometimes|string|size:3',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'includes_income_tax' => 'sometimes|boolean',
             'includes_employee_pension' => 'sometimes|boolean',
