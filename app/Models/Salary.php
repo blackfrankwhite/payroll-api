@@ -14,13 +14,27 @@ class Salary extends Model
         'type',
         'amount',
         'currency',
-        'payment_type',
         'start_date',
         'end_date',
+        'includes_income_tax',
+        'includes_employee_pension',
+        'includes_company_pension',
+        'daily_salary_calculation_base',
+        'daily_working_hours'
     ];
 
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function nonWorkingDays()
+    {
+        return $this->hasMany(NonWorkingDay::class);
+    }
+
+    public function nonWorkingCustomDates()
+    {
+        return $this->hasMany(NonWorkingCustomDate::class);
     }
 }

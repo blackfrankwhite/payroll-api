@@ -27,9 +27,11 @@ class DeductionController extends Controller
             'type' => 'required|string',
             'start_date' => 'sometimes|nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'payment_type' => 'required|in:net,gross',
             'currency' => 'required|string|size:3',
             'amount' => 'required|numeric',
+            'includes_income_tax' => 'sometimes|boolean',
+            'includes_employee_pension' => 'sometimes|boolean',
+            'includes_company_pension' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -54,9 +56,11 @@ class DeductionController extends Controller
             'type' => 'sometimes|string',
             'start_date' => 'sometimes|nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'payment_type' => 'sometimes|in:net,gross',
             'currency' => 'sometimes|string|size:3',
             'amount' => 'sometimes|numeric',
+            'includes_income_tax' => 'sometimes|boolean',
+            'includes_employee_pension' => 'sometimes|boolean',
+            'includes_company_pension' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {

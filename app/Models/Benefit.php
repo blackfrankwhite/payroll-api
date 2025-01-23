@@ -14,9 +14,11 @@ class Benefit extends Model
         'type',
         'start_date',
         'end_date',
-        'payment_type',
         'currency',
         'amount',
+        'includes_income_tax',
+        'includes_employee_pension',
+        'includes_company_pension',
     ];
 
     public function employee()
