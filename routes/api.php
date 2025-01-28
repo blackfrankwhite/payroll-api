@@ -8,6 +8,8 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\BenefitController;
 use App\Http\Controllers\DeductionController;
+use App\Http\Controllers\IncomeTaxExemptionController;
+use App\Http\Controllers\IncentiveBonusController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -46,6 +48,22 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('{deductionID}', [DeductionController::class, 'show']);
                 Route::put('{deductionID}', [DeductionController::class, 'update']);
                 Route::delete('{deductionID}', [DeductionController::class, 'destroy']);
+            });
+
+            Route::prefix('{employeeID}/incentive-bonuses')->group(function () {
+                Route::post('/', [IncentiveBonusController::class, 'store']);
+                Route::get('/', [IncentiveBonusController::class, 'index']);
+                Route::get('{deductionID}', [IncentiveBonusController::class, 'show']);
+                Route::put('{deductionID}', [IncentiveBonusController::class, 'update']);
+                Route::delete('{deductionID}', [IncentiveBonusController::class, 'destroy']);
+            });
+
+            Route::prefix('{employeeID}/income-tax-exemptions')->group(function () {
+                Route::post('/', [IncomeTaxExemptionController::class, 'store']);
+                Route::get('/', [IncomeTaxExemptionController::class, 'index']);
+                Route::get('{deductionID}', [IncomeTaxExemptionController::class, 'show']);
+                Route::put('{deductionID}', [IncomeTaxExemptionController::class, 'update']);
+                Route::delete('{deductionID}', [IncomeTaxExemptionController::class, 'destroy']);
             });
         });
     });
