@@ -26,7 +26,7 @@ class SalaryController extends Controller
     public function store(Request $request, $employeeID)
     {
         $validator = \Validator::make($request->all(), [
-            'type' => 'required|in:monthly,daily,hourly,annually',
+            'type' => 'required|in:daily,monthly_fixed,monthly_shifts,hourly',
             'amount' => 'required|numeric',
             'payment_currency' => 'required|string|size:3',
             'calculation_currency' => 'required|string|size:3',
@@ -69,7 +69,7 @@ class SalaryController extends Controller
         $salaryID = $request->route('salaryID');
 
         $validator = \Validator::make($request->all(), [
-            'type' => 'sometimes|in:monthly,daily,hourly,annually',
+            'type' => 'sometimes|in:daily,monthly_fixed,monthly_shifts,hourly',
             'amount' => 'sometimes|numeric',
             'payment_currency' => 'sometimes|string|size:3',
             'calculation_currency' => 'sometimes|string|size:3',
