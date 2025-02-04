@@ -10,6 +10,7 @@ use App\Http\Controllers\BenefitController;
 use App\Http\Controllers\DeductionController;
 use App\Http\Controllers\IncomeTaxExemptionController;
 use App\Http\Controllers\IncentiveBonusController;
+use App\Http\Controllers\PayrollController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -64,6 +65,10 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('{deductionID}', [IncomeTaxExemptionController::class, 'show']);
                 Route::put('{deductionID}', [IncomeTaxExemptionController::class, 'update']);
                 Route::delete('{deductionID}', [IncomeTaxExemptionController::class, 'destroy']);
+            });
+
+            Route::prefix('{employeeID}/payroll')->group(function () {
+                Route::get('/calculate', [PayrollController::class, 'calculatePayroll']);
             });
         });
     });
