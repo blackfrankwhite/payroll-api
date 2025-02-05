@@ -10,6 +10,8 @@ class PayrollRepository
     {
         // 1. Salaries calculation
         $salaries = DB::table('salaries')
+            ->join('employees', 'salaries.employee_id', '=', 'employees.id')
+            ->whereNull('employees.deleted_at') 
             ->selectRaw("
                 salaries.id AS salary_id,
                 salaries.employee_id,
@@ -64,6 +66,8 @@ class PayrollRepository
         // as calculate_prorated_salary_for_period except that salary_id is not needed (we pass 0).
         // Also, we assume that for benefits, tax flags are not applicable so we pass 0 for both.
         $benefits = DB::table('benefits')
+            ->join('employees', 'salaries.employee_id', '=', 'employees.id')
+            ->whereNull('employees.deleted_at') 
             ->selectRaw("
                 benefits.id AS benefit_id,
                 benefits.employee_id,
@@ -118,6 +122,8 @@ class PayrollRepository
         // 3. Deductions calculation
         // Process deductions similarly to benefits.
         $deductions = DB::table('deductions')
+            ->join('employees', 'salaries.employee_id', '=', 'employees.id')
+            ->whereNull('employees.deleted_at') 
             ->selectRaw("
                 deductions.id AS deduction_id,
                 deductions.employee_id,
