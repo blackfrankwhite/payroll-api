@@ -19,6 +19,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('company')->group(function () {
         Route::post('/', [CompanyController::class, 'register']);
         Route::get('/', [CompanyController::class, 'getCompany']);
+
+        Route::prefix('payroll')->group(function () {
+            Route::get('/calculate', [PayrollController::class, 'calculatePayroll']);
+        });
         
         Route::prefix('employee')->group(function () {
             Route::post('/', [EmployeeController::class, 'addEmployee']);
@@ -65,10 +69,6 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('{deductionID}', [IncomeTaxExemptionController::class, 'show']);
                 Route::put('{deductionID}', [IncomeTaxExemptionController::class, 'update']);
                 Route::delete('{deductionID}', [IncomeTaxExemptionController::class, 'destroy']);
-            });
-
-            Route::prefix('{employeeID}/payroll')->group(function () {
-                Route::get('/calculate', [PayrollController::class, 'calculatePayroll']);
             });
         });
     });

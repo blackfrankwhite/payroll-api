@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Repositories\PayrollRepository;
 
 class PayrollService
@@ -20,6 +21,7 @@ class PayrollService
      * - salary_gross, salary_pension, salary_income_tax, salary_net
      * - benefit_gross, benefit_pension, benefit_income_tax, benefit_net
      * - deduction_gross, deduction_pension, deduction_income_tax, deduction_net
+     * plus additional employee details.
      *
      * @param array  $employeeIDs
      * @param string $startDate   Format: YYYY-MM-DD
@@ -28,22 +30,20 @@ class PayrollService
      */
     public function calculatePayroll(array $employeeIDs, string $startDate, string $endDate)
     {
-        // Retrieve payroll data from the repository.
-        // The repository returns an associative array with keys: 'salaries', 'benefits', 'deductions'.
+        // Retrieve raw payroll data for salaries, benefits, and deductions.
         $data = $this->payrollRepository->getPayrollData($employeeIDs, $startDate, $endDate);
 
-        // Initialize a final result array keyed by employee_id.
-        $final = [];
+        // Initialize an array to accumulate results per employee.
+        $results = [];
 
-        // Process salaries:
-        // Each salary record contains a JSON column named "salary_breakdown".
+        // Process Salaries:
         foreach ($data['salaries'] as $record) {
-            $employeeId = $record->employee_id;
-            // Decode the JSON breakdown.
+            $empId = $record->employee_id;
+            // Decode the salary breakdown JSON.
             $breakdown = json_decode($record->salary_breakdown, true);
-            if (!isset($final[$employeeId])) {
-                $final[$employeeId] = [
-                    'employee_id' => $employeeId,
+            if (!isset($results[$empId])) {
+                $results[$empId] = [
+                    'employee_id' => $empId,
                     'salary_gross' => 0,
                     'salary_pension' => 0,
                     'salary_income_tax' => 0,
@@ -58,21 +58,19 @@ class PayrollService
                     'deduction_net' => 0,
                 ];
             }
-            // The JSON breakdown contains keys: base, pension, income_tax, net.
-            $final[$employeeId]['salary_gross'] += (float) $breakdown['base'];
-            $final[$employeeId]['salary_pension'] += (float) $breakdown['pension'];
-            $final[$employeeId]['salary_income_tax'] += (float) $breakdown['income_tax'];
-            $final[$employeeId]['salary_net'] += (float) $breakdown['net'];
+            $results[$empId]['salary_gross'] += (float) $breakdown['base'];
+            $results[$empId]['salary_pension'] += (float) $breakdown['pension'];
+            $results[$empId]['salary_income_tax'] += (float) $breakdown['income_tax'];
+            $results[$empId]['salary_net'] += (float) $breakdown['net'];
         }
 
-        // Process benefits:
-        // Each benefit record contains a JSON column named "benefit_breakdown".
+        // Process Benefits:
         foreach ($data['benefits'] as $record) {
-            $employeeId = $record->employee_id;
+            $empId = $record->employee_id;
             $breakdown = json_decode($record->benefit_breakdown, true);
-            if (!isset($final[$employeeId])) {
-                $final[$employeeId] = [
-                    'employee_id' => $employeeId,
+            if (!isset($results[$empId])) {
+                $results[$empId] = [
+                    'employee_id' => $empId,
                     'salary_gross' => 0,
                     'salary_pension' => 0,
                     'salary_income_tax' => 0,
@@ -87,20 +85,19 @@ class PayrollService
                     'deduction_net' => 0,
                 ];
             }
-            $final[$employeeId]['benefit_gross'] += (float) $breakdown['base'];
-            $final[$employeeId]['benefit_pension'] += (float) $breakdown['pension'];
-            $final[$employeeId]['benefit_income_tax'] += (float) $breakdown['income_tax'];
-            $final[$employeeId]['benefit_net'] += (float) $breakdown['net'];
+            $results[$empId]['benefit_gross'] += (float) $breakdown['base'];
+            $results[$empId]['benefit_pension'] += (float) $breakdown['pension'];
+            $results[$empId]['benefit_income_tax'] += (float) $breakdown['income_tax'];
+            $results[$empId]['benefit_net'] += (float) $breakdown['net'];
         }
 
-        // Process deductions:
-        // Each deduction record contains a JSON column named "deduction_breakdown".
+        // Process Deductions:
         foreach ($data['deductions'] as $record) {
-            $employeeId = $record->employee_id;
+            $empId = $record->employee_id;
             $breakdown = json_decode($record->deduction_breakdown, true);
-            if (!isset($final[$employeeId])) {
-                $final[$employeeId] = [
-                    'employee_id' => $employeeId,
+            if (!isset($results[$empId])) {
+                $results[$empId] = [
+                    'employee_id' => $empId,
                     'salary_gross' => 0,
                     'salary_pension' => 0,
                     'salary_income_tax' => 0,
@@ -115,15 +112,29 @@ class PayrollService
                     'deduction_net' => 0,
                 ];
             }
-            $final[$employeeId]['deduction_gross'] += (float) $breakdown['base'];
-            $final[$employeeId]['deduction_pension'] += (float) $breakdown['pension'];
-            $final[$employeeId]['deduction_income_tax'] += (float) $breakdown['income_tax'];
-            $final[$employeeId]['deduction_net'] += (float) $breakdown['net'];
+            $results[$empId]['deduction_gross'] += (float) $breakdown['base'];
+            $results[$empId]['deduction_pension'] += (float) $breakdown['pension'];
+            $results[$empId]['deduction_income_tax'] += (float) $breakdown['income_tax'];
+            $results[$empId]['deduction_net'] += (float) $breakdown['net'];
         }
 
-        // Convert the final array to a zero-indexed array of objects.
-        $result = array_values($final);
+        // Optionally, fetch employee details and merge them.
+        $employeeIds = array_keys($results);
+        $employees = \App\Models\Employee::whereIn('id', $employeeIds)->get()->keyBy('id');
 
-        return $result;
+        // Merge employee data into results.
+        foreach ($results as $empId => &$payroll) {
+            if (isset($employees[$empId])) {
+                $employee = $employees[$empId];
+                $payroll['name'] = $employee->name;
+                $payroll['email'] = $employee->email;
+                $payroll['position'] = $employee->position;
+                // ... add any additional employee fields as needed.
+            }
+        }
+        unset($payroll);
+
+        // Return the final payroll data as a zero-indexed array.
+        return array_values($results);
     }
 }

@@ -14,7 +14,7 @@ class PayrollController extends Controller
         $this->payrollService = $payrollService;
     }
 
-    public function calculatePayroll(Request $request, $employeeID)
+    public function calculatePayroll(Request $request)
     {
         $validator = \Validator::make($request->all(), [
             'start_date' => 'required|date',
