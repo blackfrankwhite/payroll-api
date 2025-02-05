@@ -48,6 +48,7 @@ class PayrollRepository
                 // For calculate_prorated_salary_for_period parameters:
                 $startDate, $endDate, $endDate,
             ])
+            ->whereNull('salaries.deleted_at')
             ->whereIn('salaries.employee_id', $employeeIDs)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->where('salaries.start_date', '<=', $endDate)
@@ -67,7 +68,7 @@ class PayrollRepository
         // Also, we assume that for benefits, tax flags are not applicable so we pass 0 for both.
         $benefits = DB::table('benefits')
             ->join('employees', 'benefits.employee_id', '=', 'employees.id')
-            ->whereNull('employees.deleted_at') 
+            ->whereNull('employees.deleted_at')
             ->selectRaw("
                 benefits.id AS benefit_id,
                 benefits.employee_id,
@@ -107,6 +108,7 @@ class PayrollRepository
                 // For breakdown function call:
                 $startDate, $endDate, $endDate,
             ])
+            ->whereNull('benefits.deleted_at')
             ->whereIn('benefits.employee_id', $employeeIDs)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->where('benefits.start_date', '<=', $endDate)
@@ -170,6 +172,7 @@ class PayrollRepository
                                    ->orWhereNull('deductions.end_date');
                       });
             })
+            ->whereNull('deductions.deleted_at')
             ->groupBy('deductions.id')
             ->orderBy('deductions.employee_id')
             ->get();
