@@ -122,16 +122,28 @@ class PayrollService
         $employeeIds = array_keys($results);
         $employees = \App\Models\Employee::whereIn('id', $employeeIds)->get()->keyBy('id');
 
-        // Merge employee data into results.
         foreach ($results as $empId => &$payroll) {
             if (isset($employees[$empId])) {
                 $employee = $employees[$empId];
+                $payroll['company_id'] = $employee->company_id;
+                $payroll['user_id'] = $employee->user_id;
+                $payroll['position'] = $employee->position;
                 $payroll['name'] = $employee->name;
                 $payroll['email'] = $employee->email;
-                $payroll['position'] = $employee->position;
-                // ... add any additional employee fields as needed.
+                $payroll['phone'] = $employee->phone;
+                $payroll['id_number'] = $employee->id_number;
+                $payroll['surname'] = $employee->surname;
+                $payroll['gender'] = $employee->gender;
+                $payroll['birth_date'] = $employee->birth_date;
+                $payroll['bank_account'] = $employee->bank_account;
+                $payroll['residency'] = $employee->residency;
+                $payroll['address'] = $employee->address;
+                $payroll['start_date'] = $employee->start_date;
+                $payroll['end_date'] = $employee->end_date;
+                $payroll['pension'] = $employee->pension;
             }
         }
+        
         unset($payroll);
 
         // Return the final payroll data as a zero-indexed array.
