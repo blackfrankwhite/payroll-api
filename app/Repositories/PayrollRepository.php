@@ -61,121 +61,101 @@ class PayrollRepository
             ->orderBy('salaries.employee_id')
             ->get();
 
-        // 2. Benefits calculation
-        // Benefits are not linked by salary_id. We connect them to the period via start_date/end_date.
-        // We assume a function calculate_prorated_benefit_for_period exists that has the same signature
-        // as calculate_prorated_salary_for_period except that salary_id is not needed (we pass 0).
-        // Also, we assume that for benefits, tax flags are not applicable so we pass 0 for both.
-        $benefits = DB::table('benefits')
-            ->join('employees', 'benefits.employee_id', '=', 'employees.id')
-            ->whereNull('employees.deleted_at')
-            ->selectRaw("
-                benefits.id AS benefit_id,
-                benefits.employee_id,
-                benefits.amount AS benefit_amount,
-                benefits.start_date AS benefit_start,
-                benefits.end_date AS benefit_end,
-                -- Determine the effective period for the benefit.
-                GREATEST(benefits.start_date, ?) AS period_start,
-                LEAST(COALESCE(benefits.end_date, ?), ?) AS period_end,
-                CAST(
-                    calculate_prorated_benefit_for_period(
-                        benefits.amount,
-                        GREATEST(benefits.start_date, ?),
-                        LEAST(COALESCE(benefits.end_date, ?), ?),
-                        0,
-                        'WORKING_DAYS'
-                    ) AS DECIMAL(18,2)
-                ) AS prorated_benefit,
-                calculate_salary_breakdown(
-                    CAST(
-                        calculate_prorated_benefit_for_period(
-                            benefits.amount,
-                            GREATEST(benefits.start_date, ?),
-                            LEAST(COALESCE(benefits.end_date, ?), ?),
-                            0,
-                            'WORKING_DAYS'
-                        ) AS DECIMAL(18,2)
-                    ),
-                    0,
-                    0
-                ) AS benefit_breakdown
-            ", [
-                // Bound parameters for benefits period boundaries:
-                $startDate, $endDate, $endDate,
-                // For calculate_prorated_benefit_for_period call:
-                $startDate, $endDate, $endDate,
-                // For breakdown function call:
-                $startDate, $endDate, $endDate,
-            ])
-            ->whereNull('benefits.deleted_at')
-            ->whereIn('benefits.employee_id', $employeeIDs)
+        $benefits = DB::table('salaries')
+            ->join('benefits', function ($join) use ($startDate, $endDate) {
+                $join->on('salaries.start_date', '<=', 'benefits.end_date')
+                     ->on('salaries.end_date', '>=', 'benefits.start_date')
+                     ->on('salaries.employee_id', '=', 'benefits.employee_id');
+            })
+            ->whereIn('salaries.employee_id', $employeeIDs)
             ->where(function ($query) use ($startDate, $endDate) {
-                $query->where('benefits.start_date', '<=', $endDate)
-                      ->where(function ($subQuery) use ($startDate) {
-                          $subQuery->where('benefits.end_date', '>=', $startDate)
-                                   ->orWhereNull('benefits.end_date');
+                $query->whereBetween('salaries.start_date', [$startDate, $endDate])
+                      ->orWhereBetween('salaries.end_date', [$startDate, $endDate])
+                      ->orWhere(function ($q) use ($startDate, $endDate) {
+                          $q->where('salaries.start_date', '<', $startDate)
+                            ->where('salaries.end_date', '>', $endDate);
                       });
             })
-            ->groupBy('benefits.id')
-            ->orderBy('benefits.employee_id')
-            ->get();
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('benefits.start_date', [$startDate, $endDate])
+                      ->orWhereBetween('benefits.end_date', [$startDate, $endDate])
+                      ->orWhere(function ($q) use ($startDate, $endDate) {
+                          $q->where('benefits.start_date', '<', $startDate)
+                            ->where('benefits.end_date', '>', $endDate);
+                      });
+            })
+            ->select(
+                DB::raw('GREATEST(salaries.start_date, benefits.start_date, "' . $startDate . '") as period_start'),
+                DB::raw('LEAST(salaries.end_date, benefits.end_date, "' . $endDate . '") as period_end'),
+                'salaries.id as salary_id',
+                'salaries.employee_id',
+                DB::raw('calculate_salary_breakdown(
+                    CAST(
+                        calculate_prorated_salary_for_period(
+                            salaries.amount,
+                            GREATEST(salaries.start_date, "' . $startDate . '"),
+                            LEAST(COALESCE(salaries.end_date, "' . $endDate . '"), "' . $endDate . '"),
+                            salaries.id,
+                            salaries.daily_salary_calculation_base
+                        ) AS DECIMAL(18,2)
+                    ),
+                    salaries.includes_income_tax,
+                    salaries.includes_employee_pension
+                ) AS benefit_breakdown')
+            )
+            ->havingRaw('period_start <= period_end')
+            ->orderBy('salaries.employee_id')
+            ->orderBy('period_start')
+            ->get();        
 
         // 3. Deductions calculation
         // Process deductions similarly to benefits.
-        $deductions = DB::table('deductions')
-            ->join('employees', 'deductions.employee_id', '=', 'employees.id')
-            ->whereNull('employees.deleted_at') 
-            ->selectRaw("
-                deductions.id AS deduction_id,
-                deductions.employee_id,
-                deductions.amount AS deduction_amount,
-                deductions.start_date AS deduction_start,
-                deductions.end_date AS deduction_end,
-                GREATEST(deductions.start_date, ?) AS period_start,
-                LEAST(COALESCE(deductions.end_date, ?), ?) AS period_end,
-                CAST(
-                    calculate_prorated_benefit_for_period(
-                        deductions.amount,
-                        GREATEST(deductions.start_date, ?),
-                        LEAST(COALESCE(deductions.end_date, ?), ?),
-                        0,
-                        'WORKING_DAYS'
-                    ) AS DECIMAL(18,2)
-                ) AS prorated_deduction,
-                calculate_salary_breakdown(
+        $deductions = DB::table('salaries')
+            ->join('deductions', function ($join) use ($startDate, $endDate) {
+                $join->on('salaries.start_date', '<=', 'deductions.end_date')
+                    ->on('salaries.end_date', '>=', 'deductions.start_date')
+                    ->on('salaries.employee_id', '=', 'deductions.employee_id');
+            })
+            ->whereIn('salaries.employee_id', $employeeIDs)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('salaries.start_date', [$startDate, $endDate])
+                    ->orWhereBetween('salaries.end_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('salaries.start_date', '<', $startDate)
+                            ->where('salaries.end_date', '>', $endDate);
+                    });
+            })
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('deductions.start_date', [$startDate, $endDate])
+                    ->orWhereBetween('deductions.end_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('deductions.start_date', '<', $startDate)
+                            ->where('deductions.end_date', '>', $endDate);
+                    });
+            })
+            ->select(
+                DB::raw('GREATEST(salaries.start_date, deductions.start_date, "' . $startDate . '") as period_start'),
+                DB::raw('LEAST(salaries.end_date, deductions.end_date, "' . $endDate . '") as period_end'),
+                'salaries.id as salary_id',
+                'salaries.employee_id',
+                DB::raw('calculate_salary_breakdown(
                     CAST(
-                        calculate_prorated_benefit_for_period(
-                            deductions.amount,
-                            GREATEST(deductions.start_date, ?),
-                            LEAST(COALESCE(deductions.end_date, ?), ?),
-                            0,
-                            'WORKING_DAYS'
+                        calculate_prorated_salary_for_period(
+                            salaries.amount,
+                            GREATEST(salaries.start_date, "' . $startDate . '"),
+                            LEAST(COALESCE(salaries.end_date, "' . $endDate . '"), "' . $endDate . '"),
+                            salaries.id,
+                            salaries.daily_salary_calculation_base
                         ) AS DECIMAL(18,2)
                     ),
-                    0,
-                    0
-                ) AS deduction_breakdown
-            ", [
-                // Bound parameters for deductions period boundaries:
-                $startDate, $endDate, $endDate,
-                // For calculate_prorated_benefit_for_period call:
-                $startDate, $endDate, $endDate,
-                // For breakdown function call:
-                $startDate, $endDate, $endDate,
-            ])
-            ->whereIn('deductions.employee_id', $employeeIDs)
-            ->where(function ($query) use ($startDate, $endDate) {
-                $query->where('deductions.start_date', '<=', $endDate)
-                      ->where(function ($subQuery) use ($startDate) {
-                          $subQuery->where('deductions.end_date', '>=', $startDate)
-                                   ->orWhereNull('deductions.end_date');
-                      });
-            })
-            ->whereNull('deductions.deleted_at')
-            ->groupBy('deductions.id')
-            ->orderBy('deductions.employee_id')
-            ->get();
+                    salaries.includes_income_tax,
+                    salaries.includes_employee_pension
+                ) AS deduction_breakdown')
+            )
+            ->havingRaw('period_start <= period_end')
+            ->orderBy('salaries.employee_id')
+            ->orderBy('period_start')
+            ->get();    
 
         // 4. Return the combined data
         return [

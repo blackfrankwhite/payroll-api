@@ -6,36 +6,105 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration {
     public function up()
     {
-        // 1. Create calculate_working_days_for_working_days function
-        DB::unprepared("DROP FUNCTION IF EXISTS calculate_working_days_for_working_days;");
-        DB::unprepared("
-            CREATE FUNCTION calculate_working_days_for_working_days(
-                start_date DATE,
-                end_date DATE,
-                salary_id INT
-            )
-            RETURNS INT
-            DETERMINISTIC
-            BEGIN
-                -- TODO: Replace the following dummy implementation with your real logic.
-                -- For now, this dummy version simply returns the difference in days plus 1.
-                RETURN DATEDIFF(end_date, start_date) + 1;
-            END;
-        ");
+            // 2. Create calculate_working_days_for_working_days function
+            DB::unprepared("DROP FUNCTION IF EXISTS calculate_working_days_for_working_days;");
+            DB::unprepared("
+                CREATE FUNCTION calculate_working_days_for_working_days(start_date DATE, end_date DATE, p_salary_id INT)
+                RETURNS INT
+                DETERMINISTIC
 
-        // 2. Create calculate_working_days_for_calendar_days function
+                BEGIN
+                    DECLARE v_current_date DATE;
+                    DECLARE working_days INT DEFAULT 0;
+                    DECLARE cnt INT DEFAULT 0;
+                    DECLARE exclude INT DEFAULT 0;
+                    
+                    SET v_current_date = start_date;
+                    
+                    WHILE v_current_date <= end_date DO
+
+
+                        SET exclude = 0;
+                        
+                        -- 1. Check non_working_days for this salary:
+                        --    If there is a record for the day-of-week, exclude the day.
+                        --    We assume the table stores values like 'EVERY_MONDAY', 'EVERY_TUESDAY', etc.
+
+                        SELECT COUNT(*) INTO cnt 
+                            FROM non_working_days 
+                            WHERE salary_id = p_salary_id 
+                            AND day = CONCAT('EVERY_', UPPER(DAYNAME(v_current_date)));
+
+
+                        IF cnt > 0 THEN
+                            SET exclude = 1;
+                        END IF;
+                        
+                        SELECT COUNT(*) INTO cnt 
+                            FROM non_working_days 
+                            WHERE salary_id = p_salary_id 
+                            AND day = 'PUBLIC_HOLIDAYS_UNDER_GEORGIAN_LAW';
+
+                        IF cnt > 0 THEN
+                            -- 2. Check Georgian public holidays:return
+                            --    Exclude if the current date matches a full_date 
+                            --    OR if its month and day match a row’s month_date.
+                            SELECT COUNT(*) INTO cnt 
+                                FROM georgian_public_holidays 
+                                WHERE full_date = v_current_date 
+                                OR DATE_FORMAT(v_current_date, '%m-%d') = month_day;
+                            IF cnt > 0 THEN
+                                SET exclude = 1;
+                            END IF;
+                        END IF;
+
+                        
+                        -- 3. Check non_working_custom_dates for this salary:
+                        SELECT COUNT(*) INTO cnt 
+                            FROM non_working_custom_dates 
+                            WHERE salary_id = p_salary_id 
+                            AND custom_date = v_current_date;
+                        IF cnt > 0 THEN
+                            SET exclude = 1;
+                        END IF;
+                        
+                        -- If none of the exclusions apply, count the day as a working day.
+
+                        IF exclude = 0 THEN
+                            SET working_days = working_days + 1;
+                        END IF;
+                        
+                        SET v_current_date = DATE_ADD(v_current_date, INTERVAL 1 DAY);
+                    END WHILE;
+                    
+                    RETURN working_days;
+                END;
+            ");
+
         DB::unprepared("DROP FUNCTION IF EXISTS calculate_working_days_for_calendar_days;");
         DB::unprepared("
-            CREATE FUNCTION calculate_working_days_for_calendar_days(
-                start_date DATE,
-                end_date DATE
-            )
+            CREATE FUNCTION calculate_working_days_for_calendar_days(start_date DATE, end_date DATE)
             RETURNS INT
             DETERMINISTIC
             BEGIN
-                -- TODO: Replace the following dummy implementation with your real logic.
-                -- For now, this dummy version simply returns the difference in days plus 1.
-                RETURN DATEDIFF(end_date, start_date) + 1;
+                DECLARE v_current_date DATE;
+                DECLARE working_days INT DEFAULT 0;
+                DECLARE cnt INT DEFAULT 0;
+               
+                SET v_current_date = start_date;
+                WHILE v_current_date <= end_date DO
+                    IF DAYOFWEEK(v_current_date) NOT IN (1,7) THEN
+                        SELECT COUNT(*) INTO cnt 
+                          FROM non_working_custom_dates 
+                         WHERE custom_date = v_current_date;
+                        IF cnt = 0 THEN
+                            SET working_days = working_days + 1;
+                        END IF;
+                    END IF;
+                    SET v_current_date = DATE_ADD(v_current_date, INTERVAL 1 DAY);
+                END WHILE;
+               
+                RETURN working_days;
             END;
         ");
 
