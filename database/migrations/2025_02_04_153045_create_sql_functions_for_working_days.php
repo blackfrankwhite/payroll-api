@@ -93,14 +93,6 @@ return new class extends Migration {
                
                 SET v_current_date = start_date;
                 WHILE v_current_date <= end_date DO
-                    IF DAYOFWEEK(v_current_date) NOT IN (1,7) THEN
-                        SELECT COUNT(*) INTO cnt 
-                          FROM non_working_custom_dates 
-                         WHERE custom_date = v_current_date;
-                        IF cnt = 0 THEN
-                            SET working_days = working_days + 1;
-                        END IF;
-                    END IF;
                     SET v_current_date = DATE_ADD(v_current_date, INTERVAL 1 DAY);
                 END WHILE;
                
