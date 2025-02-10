@@ -122,7 +122,6 @@ return new class extends Migration {
                 DECLARE days_worked_in_month INT;
                 DECLARE daily_salary DECIMAL(18,6);
 
-                -- Start from the first day of the month of the start_date.
                 SET current_month = DATE_FORMAT(start_date, '%Y-%m-01');
 
                 WHILE current_month <= end_date DO
