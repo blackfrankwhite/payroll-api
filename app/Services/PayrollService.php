@@ -31,7 +31,6 @@ class PayrollService
     public function calculatePayroll(array $employeeIDs, string $startDate, string $endDate)
     {
         $data = $this->payrollRepository->getPayrollData($employeeIDs, $startDate, $endDate);
-        dd($data);
         $results = [];
     
         // Process Salaries:
