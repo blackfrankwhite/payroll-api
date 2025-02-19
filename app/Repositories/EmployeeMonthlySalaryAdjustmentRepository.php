@@ -8,7 +8,9 @@ class EmployeeMonthlySalaryAdjustmentRepository
 {
     public function getAllForEmployee(int $companyId, int $employeeId)
     {
-        return EmployeeMonthlySalaryAdjustment::whereHas('employee', function ($query) use ($companyId) {
+        return EmployeeMonthlySalaryAdjustment::join('monthly_salary_adjustments', 'employee_monthly_salary_adjustments.monthly_salary_adjustment_id', '=', 'monthly_salary_adjustments.id')
+            ->select('employee_monthly_salary_adjustments.*', 'monthly_salary_adjustments.name', 'monthly_salary_adjustments.type')
+            ->whereHas('employee', function ($query) use ($companyId) {
                 $query->where('company_id', $companyId);
             })
             ->where('employee_id', $employeeId)
@@ -17,8 +19,10 @@ class EmployeeMonthlySalaryAdjustmentRepository
 
     public function find(int $companyId, int $employeeId, int $id)
     {
-        return EmployeeMonthlySalaryAdjustment::whereHas('employee', function ($query) use ($companyId) {
-                $query->where('company_id', $companyId);
+        return EmployeeMonthlySalaryAdjustment::join('monthly_salary_adjustments', 'employee_monthly_salary_adjustments.monthly_salary_adjustment_id', '=', 'monthly_salary_adjustments.id')
+            ->select('employee_monthly_salary_adjustments.*', 'monthly_salary_adjustments.name', 'monthly_salary_adjustments.type')
+            ->whereHas('employee', function ($query) use ($companyId) {
+                    $query->where('company_id', $companyId);
             })
             ->where('employee_id', $employeeId)
             ->where('id', $id)
