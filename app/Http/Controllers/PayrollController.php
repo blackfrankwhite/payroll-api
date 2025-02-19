@@ -20,6 +20,7 @@ class PayrollController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'employee_ids' => 'required|array',
+            'prorate_ajdustments' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -29,8 +30,7 @@ class PayrollController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $employeeIDs = $request->employee_ids;
-
-        $payrollData = $this->payrollService->calculatePayroll($employeeIDs, $startDate, $endDate);
+        $payrollData = $this->payrollService->calculatePayroll($employeeIDs, $startDate, $endDate, $request->prorate_adjustments ?? true);
         return response()->json($payrollData);
     }
 }

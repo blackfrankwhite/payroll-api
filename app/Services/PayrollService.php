@@ -14,9 +14,9 @@ class PayrollService
         $this->payrollRepository = $payrollRepository;
     }
 
-    public function calculatePayroll(array $employeeIDs, string $startDate, string $endDate)
+    public function calculatePayroll(array $employeeIDs, string $startDate, string $endDate, bool $prorateAdjustments = true)
     {
-        $data = $this->payrollRepository->getPayrollData($employeeIDs, $startDate, $endDate);
+        $data = $this->payrollRepository->getPayrollData($employeeIDs, $startDate, $endDate, $prorateAdjustments);
         $results = [];
     
         // Process Salaries:
