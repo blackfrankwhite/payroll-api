@@ -132,6 +132,7 @@ class PayrollRepository
                     s.daily_salary_calculation_base
                 FROM salaries s
                 WHERE s.employee_id IN ($employeeIDsString)
+                  AND s.type = monthly_fixed
                   AND s.start_date <= ? 
                   AND (s.end_date IS NULL OR s.end_date >= ?)
             ),
@@ -194,12 +195,14 @@ class PayrollRepository
             ORDER BY ap.employee_id, start_date
         ";
 
-        return DB::select($sql, [
+        $result = DB::select($sql, [
             // For salary_periods:
             $startDate, $endDate, $endDate, $endDate, $startDate,
             // For adjustment_periods:
             $startDate, $endDate, $endDate, $endDate, $startDate,
         ]);
+
+        return $result;
     }
 
     /**
