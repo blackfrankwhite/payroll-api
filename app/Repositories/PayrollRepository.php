@@ -132,7 +132,7 @@ class PayrollRepository
                     s.daily_salary_calculation_base
                 FROM salaries s
                 WHERE s.employee_id IN ($employeeIDsString)
-                  AND s.type = monthly_fixed
+                  AND s.type = 'monthly_fixed'
                   AND s.start_date <= ? 
                   AND (s.end_date IS NULL OR s.end_date >= ?)
             ),
