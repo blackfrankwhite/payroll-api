@@ -14,9 +14,9 @@ class PayrollService
         $this->payrollRepository = $payrollRepository;
     }
 
-    public function calculatePayroll(array $employeeIDs, string $startDate, string $endDate, bool $prorateAdjustments = true)
+    public function calculatePayroll(array $employeeIDs, string $startDate, string $endDate, array $prorateAdjustments = [], array $regularAdjustments = [])
     {
-        $data = $this->payrollRepository->getPayrollData($employeeIDs, $startDate, $endDate, $prorateAdjustments);
+        $data = $this->payrollRepository->getPayrollData($employeeIDs, $startDate, $endDate, $prorateAdjustments, $regularAdjustments);
         $results = [];
     
         // Process Salaries:
@@ -58,7 +58,8 @@ class PayrollService
         // Process Adjustments:
         foreach ($data['adjustments'] as $record) {
             $empId = $record->employee_id;
-            $breakdown = json_decode($record->adjustment_breakdown, true);
+            $breakdown = json_decode($record->breakdown, true);
+
             $adjustmentName = strtolower(str_replace(' ', '_', $record->adjustment_name)) . '_gross';
             
             // If the employee hasn't been processed in salaries, skip the adjustment.

@@ -15,16 +15,21 @@ class PayrollRepository
      * @param  bool    $prorateAdjustments
      * @return array
      */
-    public function getPayrollData(array $employeeIDs, $startDate, $endDate, $prorateAdjustments = true)
+    public function getPayrollData(array $employeeIDs, $startDate, $endDate, $prorateAdjustments, $regularAdjustments)
     {
         $salaries = $this->getSalaries($employeeIDs, $startDate, $endDate);
-
-        if ($prorateAdjustments) {
-            $adjustments = $this->getProratedAdjustments($employeeIDs, $startDate, $endDate);
-        } else {
-            $adjustments = $this->getNonProratedAdjustments($employeeIDs, $startDate, $endDate);
+        $proratedAdjustmentData = [];
+        $regularAdjustmentData = [];
+        if (!empty($prorateAdjustments)) {
+            $proratedAdjustmentData = $this->getProratedAdjustments($employeeIDs, $startDate, $endDate, $prorateAdjustments);
         }
 
+        if (!empty($regularAdjustments)) {
+            $regularAdjustmentData = $this->getNonProratedAdjustments($employeeIDs, $startDate, $endDate, $regularAdjustments);
+        }
+
+        $adjustments = collect($proratedAdjustmentData)->merge($regularAdjustmentData)->all();
+        
         return [
             'salaries'    => $salaries,
             'adjustments' => $adjustments,
@@ -118,9 +123,10 @@ class PayrollRepository
      * @param  string  $endDate
      * @return array
      */
-    private function getProratedAdjustments(array $employeeIDs, $startDate, $endDate)
+    private function getProratedAdjustments(array $employeeIDs, $startDate, $endDate, $adjusmentIDs)
     {
         $employeeIDsString = implode(',', $employeeIDs);
+        $adjusmentIDsString = implode(',', $adjusmentIDs);
 
         $sql = "
             WITH salary_periods AS (
@@ -132,7 +138,6 @@ class PayrollRepository
                     s.daily_salary_calculation_base
                 FROM salaries s
                 WHERE s.employee_id IN ($employeeIDsString)
-                  AND s.type = 'monthly_fixed'
                   AND s.start_date <= ? 
                   AND (s.end_date IS NULL OR s.end_date >= ?)
             ),
@@ -151,6 +156,7 @@ class PayrollRepository
                 JOIN monthly_salary_adjustments m 
                     ON a.monthly_salary_adjustment_id = m.id
                 WHERE a.employee_id IN ($employeeIDsString)
+                  AND m.id in ($adjusmentIDsString)
                   AND a.start_date <= ? 
                   AND (a.end_date IS NULL OR a.end_date >= ?)
             )
@@ -186,7 +192,7 @@ class PayrollRepository
                     ),
                     ap.includes_income_tax,
                     ap.includes_employee_pension
-                ) AS adjustment_breakdown
+                ) AS breakdown
             FROM adjustment_periods ap
             JOIN salary_periods sp 
               ON ap.employee_id = sp.employee_id
@@ -195,14 +201,12 @@ class PayrollRepository
             ORDER BY ap.employee_id, start_date
         ";
 
-        $result = DB::select($sql, [
+        return DB::select($sql, [
             // For salary_periods:
             $startDate, $endDate, $endDate, $endDate, $startDate,
             // For adjustment_periods:
             $startDate, $endDate, $endDate, $endDate, $startDate,
         ]);
-
-        return $result;
     }
 
     /**
@@ -213,10 +217,11 @@ class PayrollRepository
      * @param  string  $endDate
      * @return array
      */
-    private function getNonProratedAdjustments(array $employeeIDs, $startDate, $endDate)
+    private function getNonProratedAdjustments(array $employeeIDs, $startDate, $endDate, $adjusmentIDs)
     {
         $emsas = DB::table('employee_monthly_salary_adjustments as emsa')
             ->join('monthly_salary_adjustments as m', 'emsa.monthly_salary_adjustment_id', '=', 'm.id')
+            ->whereIn('m.id', $adjusmentIDs)
             ->selectRaw("
                 emsa.employee_id,
         
@@ -247,7 +252,7 @@ class PayrollRepository
                 ) / 30.0) AS months_in_period,
         
                 -- Calculate original salary breakdown
-                calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension) AS original_adjustment_breakdown,
+                calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension) as breakdown,
         
                 -- Multiply JSON fields by `months_in_period`
                 JSON_SET(
