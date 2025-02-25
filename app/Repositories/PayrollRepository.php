@@ -243,96 +243,50 @@ class PayrollRepository
     {
         $emsas = DB::table('employee_monthly_salary_adjustments as emsa')
             ->join('monthly_salary_adjustments as m', 'emsa.monthly_salary_adjustment_id', '=', 'm.id')
+            ->join('employees as e', 'emsa.employee_id', '=', 'e.id')
             ->whereIn('m.id', $adjusmentIDs)
             ->selectRaw("
                 emsa.employee_id,
         
-                -- Adjust start_date within range
-                CASE 
-                    WHEN emsa.start_date < ? THEN ? 
-                    ELSE emsa.start_date 
-                END AS start_date,
+                GREATEST(emsa.start_date, ?, e.start_date) AS start_date,
         
-                -- Adjust end_date within range (handling NULL as ongoing)
-                CASE 
-                    WHEN emsa.end_date IS NULL THEN ?
-                    WHEN emsa.end_date > ? THEN ? 
-                    ELSE emsa.end_date 
-                END AS end_date,
+                LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date) AS end_date,
         
-                -- Calculate number of months (including partial months, floored to full number)
                 FLOOR(DATEDIFF(
-                    CASE 
-                        WHEN emsa.end_date IS NULL THEN ?
-                        WHEN emsa.end_date > ? THEN ? 
-                        ELSE emsa.end_date 
-                    END, 
-                    CASE 
-                        WHEN emsa.start_date < ? THEN ? 
-                        ELSE emsa.start_date 
-                    END
+                    LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
+                    GREATEST(emsa.start_date, ?, e.start_date)
                 ) / 30.0) AS months_in_period,
         
-                -- Calculate original salary breakdown
                 calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension) as breakdown,
         
-                -- Multiply JSON fields by `months_in_period`
                 JSON_SET(
                     calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension),
                     '$.base', JSON_UNQUOTE(JSON_EXTRACT(
                         calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.base'
                     )) * FLOOR(DATEDIFF(
-                        CASE 
-                            WHEN emsa.end_date IS NULL THEN ?
-                            WHEN emsa.end_date > ? THEN ? 
-                            ELSE emsa.end_date 
-                        END, 
-                        CASE 
-                            WHEN emsa.start_date < ? THEN ? 
-                            ELSE emsa.start_date 
-                        END
+                        LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
+                        GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0),
                     
                     '$.net', JSON_UNQUOTE(JSON_EXTRACT(
                         calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.net'
                     )) * FLOOR(DATEDIFF(
-                        CASE 
-                            WHEN emsa.end_date IS NULL THEN ?
-                            WHEN emsa.end_date > ? THEN ? 
-                            ELSE emsa.end_date 
-                        END, 
-                        CASE 
-                            WHEN emsa.start_date < ? THEN ? 
-                            ELSE emsa.start_date 
-                        END
+                        LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
+                        GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0),
                     
                     '$.pension', JSON_UNQUOTE(JSON_EXTRACT(
                         calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.pension'
                     )) * FLOOR(DATEDIFF(
-                        CASE 
-                            WHEN emsa.end_date IS NULL THEN ?
-                            WHEN emsa.end_date > ? THEN ? 
-                            ELSE emsa.end_date 
-                        END, 
-                        CASE 
-                            WHEN emsa.start_date < ? THEN ? 
-                            ELSE emsa.start_date 
-                        END
+                        LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
+                        GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0),
         
                     '$.income_tax', JSON_UNQUOTE(JSON_EXTRACT(
                         calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.income_tax'
                     )) * FLOOR(DATEDIFF(
-                        CASE 
-                            WHEN emsa.end_date IS NULL THEN ?
-                            WHEN emsa.end_date > ? THEN ? 
-                            ELSE emsa.end_date 
-                        END, 
-                        CASE 
-                            WHEN emsa.start_date < ? THEN ? 
-                            ELSE emsa.start_date 
-                        END
+                        LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
+                        GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0)
                 ) AS adjustment_breakdown,
         
@@ -343,22 +297,33 @@ class PayrollRepository
                 emsa.payment_currency,
                 emsa.calculation_currency
             ", [
-                $startDate, $startDate, $endDate, $endDate, $endDate,
-                $endDate, $endDate, $endDate, $startDate, $startDate,
-        
-                $endDate, $endDate, $endDate, $startDate, $startDate,
-                $endDate, $endDate, $endDate, $startDate, $startDate,
-                $endDate, $endDate, $endDate, $startDate, $startDate,
-                $endDate, $endDate, $endDate, $startDate, $startDate
+                $startDate,  
+                $endDate,    
+                $endDate,    
+                $endDate,    
+                $endDate,    
+                $startDate,  
+                $endDate,    
+                $endDate,    
+                $startDate,  
+                $endDate,    
+                $endDate,    
+                $startDate,  
+                $endDate,    
+                $endDate,    
+                $startDate,  
+                $endDate,    
+                $endDate,    
+                $startDate,
             ])
             ->whereIn('emsa.employee_id', $employeeIDs)
             ->where('emsa.start_date', '<=', $endDate)
             ->where(function ($query) use ($startDate) {
                 $query->where('emsa.end_date', '>=', $startDate)
-                    ->orWhereNull('emsa.end_date');
+                      ->orWhereNull('emsa.end_date');
             })
             ->get();
-            
+                
         return $emsas;        
     }
 }
