@@ -44,14 +44,21 @@ class SalaryController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Validation Error', 'errors' => $validator->errors()], 422);
+            return response()->json([
+                'message' => 'Validation Error', 
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         $userId = $request->user()->id;
         $employeeID = $request->route('employeeID');
-        $salary = $this->salaryService->addSalary($userId, $employeeID, $validator->validated());
+        $result = $this->salaryService->addSalary($userId, $employeeID, $validator->validated());
 
-        return new SalaryResource($salary);
+        if (isset($result['error'])) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return new SalaryResource($result['data']);
     }
 
     public function show(Request $request, $employeeID, $salaryID)
@@ -65,9 +72,6 @@ class SalaryController extends Controller
 
     public function update(Request $request, $employeeID, $salaryID)
     {
-        $employeeID = $request->route('employeeID');
-        $salaryID = $request->route('salaryID');
-
         $validator = \Validator::make($request->all(), [
             'type' => 'sometimes|in:daily,monthly_fixed,monthly_shifts,hourly',
             'amount' => 'sometimes|numeric',
@@ -86,20 +90,29 @@ class SalaryController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Validation Error', 'errors' => $validator->errors()], 422);
+            return response()->json([
+                'message' => 'Validation Error', 
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         $userId = $request->user()->id;
-        $salary = $this->salaryService->updateSalary($userId, $employeeID, $salaryID, $validator->validated());
-        return new SalaryResource($salary);
+        $result = $this->salaryService->updateSalary($userId, $employeeID, $salaryID, $validator->validated());
+
+        if (isset($result['error'])) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return new SalaryResource($result['data']);
     }
 
     public function destroy(Request $request, $employeeID, $salaryID)
     {
-        $employeeID = $request->route('employeeID');
-        $salaryID = $request->route('salaryID');
         $userId = $request->user()->id;
-        $this->salaryService->deleteSalary($userId, $employeeID, $salaryID);
-        return response()->json(['message' => 'Salary deleted successfully'], 200);
+        $result = $this->salaryService->deleteSalary($userId, $employeeID, $salaryID);
+        if (isset($result['error'])) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+        return response()->json(['message' => $result['data']], 200);
     }
 }
