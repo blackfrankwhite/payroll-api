@@ -26,5 +26,10 @@ class Employee extends Model
         'start_date',
         'end_date',
         'pension',
+        'payment_currency'
+    ];
+
+    protected $casts = [
+        'pension' => 'boolean'
     ];
 }
