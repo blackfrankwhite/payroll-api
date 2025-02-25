@@ -49,6 +49,11 @@ class PayrollRepository
         return DB::table('salaries')
             ->join('employees', 'salaries.employee_id', '=', 'employees.id')
             ->whereNull('employees.deleted_at')
+            ->where('employees.start_date', '<=', $endDate)
+            ->where(function ($query) use ($startDate) {
+                $query->where('employees.end_date', '>=', $startDate)
+                      ->orWhereNull('employees.end_date');
+            })
             ->selectRaw("
                 salaries.id AS salary_id,
                 salaries.employee_id,
@@ -77,17 +82,25 @@ class PayrollRepository
                 employees.end_date AS employee_end_date,
                 employees.pension,
         
-                -- Effective salary period
-                GREATEST(salaries.start_date, ?) AS period_start,
-                LEAST(COALESCE(salaries.end_date, ?), ?) AS period_end,
+                -- Effective salary period (capped by salary, employee, and calculation period)
+                GREATEST(salaries.start_date, employees.start_date, ?) AS period_start,
+                LEAST(
+                    COALESCE(salaries.end_date, ?),
+                    COALESCE(employees.end_date, ?),
+                    ?
+                ) AS period_end,
                 
-                -- Prorated salary breakdown
+                -- Prorated salary breakdown using the correct dates:
                 calculate_salary_breakdown(
                     CAST(
                         calculate_prorated_salary_for_period(
                             salaries.amount,
-                            GREATEST(salaries.start_date, ?),
-                            LEAST(COALESCE(salaries.end_date, ?), ?),
+                            GREATEST(salaries.start_date, employees.start_date, ?),
+                            LEAST(
+                                COALESCE(salaries.end_date, ?),
+                                COALESCE(employees.end_date, ?),
+                                ?
+                            ),
                             salaries.id,
                             salaries.daily_salary_calculation_base
                         ) AS DECIMAL(18,2)
@@ -96,10 +109,15 @@ class PayrollRepository
                     salaries.includes_employee_pension
                 ) AS salary_breakdown
             ", [
-                // For period boundaries:
-                $startDate, $endDate, $endDate,
-                // For prorated salary calculation:
-                $startDate, $endDate, $endDate,
+                $startDate,   
+                $endDate, 
+                $endDate,
+                $endDate,
+    
+                $startDate,
+                $endDate,
+                $endDate,
+                $endDate,
             ])
             ->whereNull('salaries.deleted_at')
             ->whereIn('salaries.employee_id', $employeeIDs)
@@ -113,7 +131,7 @@ class PayrollRepository
             ->groupBy('salaries.id')
             ->orderBy('salaries.employee_id')
             ->get();
-    }
+    }    
 
     /**
      * Build and execute the query for prorated salary adjustments.
@@ -133,10 +151,12 @@ class PayrollRepository
                 SELECT 
                     s.id AS salary_id, 
                     s.employee_id, 
-                    GREATEST(s.start_date, ?) AS salary_start, 
-                    LEAST(COALESCE(s.end_date, ?), ?) AS salary_end, 
+                    GREATEST(s.start_date, e.start_date, ?) AS salary_start, 
+                    LEAST(COALESCE(s.end_date, e.end_date, ?), ?) AS salary_end, 
                     s.daily_salary_calculation_base
                 FROM salaries s
+                JOIN employees e 
+                    ON s.employee_id = e.id
                 WHERE s.employee_id IN ($employeeIDsString)
                   AND s.start_date <= ? 
                   AND (s.end_date IS NULL OR s.end_date >= ?)
@@ -145,8 +165,8 @@ class PayrollRepository
                 SELECT 
                     a.id AS adjustment_id,
                     a.employee_id, 
-                    GREATEST(a.start_date, ?) AS adj_start, 
-                    LEAST(COALESCE(a.end_date, ?), ?) AS adj_end, 
+                    GREATEST(a.start_date, e.start_date, ?) AS adj_start, 
+                    LEAST(COALESCE(a.end_date, e.end_date, ?), ?) AS adj_end, 
                     a.amount, 
                     a.includes_income_tax, 
                     a.includes_employee_pension, 
@@ -155,6 +175,8 @@ class PayrollRepository
                 FROM employee_monthly_salary_adjustments a
                 JOIN monthly_salary_adjustments m 
                     ON a.monthly_salary_adjustment_id = m.id
+                JOIN employees e 
+                    ON a.employee_id = e.id
                 WHERE a.employee_id IN ($employeeIDsString)
                   AND m.id in ($adjusmentIDsString)
                   AND a.start_date <= ? 
@@ -321,19 +343,19 @@ class PayrollRepository
                 emsa.payment_currency,
                 emsa.calculation_currency
             ", [
-                $startDate, $startDate, $endDate, $endDate, $endDate, // Adjusted start_date and end_date
-                $endDate, $endDate, $endDate, $startDate, $startDate, // months_in_period
+                $startDate, $startDate, $endDate, $endDate, $endDate,
+                $endDate, $endDate, $endDate, $startDate, $startDate,
         
-                $endDate, $endDate, $endDate, $startDate, $startDate, // For `base`
-                $endDate, $endDate, $endDate, $startDate, $startDate, // For `net`
-                $endDate, $endDate, $endDate, $startDate, $startDate, // For `pension`
-                $endDate, $endDate, $endDate, $startDate, $startDate  // For `income_tax`
+                $endDate, $endDate, $endDate, $startDate, $startDate,
+                $endDate, $endDate, $endDate, $startDate, $startDate,
+                $endDate, $endDate, $endDate, $startDate, $startDate,
+                $endDate, $endDate, $endDate, $startDate, $startDate
             ])
             ->whereIn('emsa.employee_id', $employeeIDs)
             ->where('emsa.start_date', '<=', $endDate)
             ->where(function ($query) use ($startDate) {
                 $query->where('emsa.end_date', '>=', $startDate)
-                    ->orWhereNull('emsa.end_date'); // Include ongoing adjustments
+                    ->orWhereNull('emsa.end_date');
             })
             ->get();
             
