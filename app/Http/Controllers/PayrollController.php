@@ -34,8 +34,8 @@ class PayrollController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $employeeIDs = $request->input('employee_ids');
-        $prorateAdjustments = $request->input('prorate_adjustments', []);
-        $regularAdjustments = $request->input('regular_adjustments', []);
+        $prorateAdjustments = $request->input('prorate_adjustments') ?? [];
+        $regularAdjustments = $request->input('regular_adjustments') ?? [];
 
         $payrollData = $this->payrollService->calculatePayroll(
             $employeeIDs, 
