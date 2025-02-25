@@ -13,7 +13,7 @@ class EmployeeMonthlySalaryAdjustmentRepository
             ->whereHas('employee', function ($query) use ($companyId) {
                 $query->where('company_id', $companyId);
             })
-            ->where('employee_id', $employeeId)
+            ->where('employee_monthly_salary_adjustments.employee_id', $employeeId)
             ->get();
     }
 
@@ -24,8 +24,8 @@ class EmployeeMonthlySalaryAdjustmentRepository
             ->whereHas('employee', function ($query) use ($companyId) {
                     $query->where('company_id', $companyId);
             })
-            ->where('employee_id', $employeeId)
-            ->where('id', $id)
+            ->where('employee_monthly_salary_adjustments.employee_id', $employeeId)
+            ->where('employee_monthly_salary_adjustments.id', $id)
             ->firstOrFail();
     }
 
