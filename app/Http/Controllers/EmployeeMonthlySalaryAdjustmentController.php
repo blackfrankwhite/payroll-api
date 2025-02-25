@@ -25,7 +25,6 @@ class EmployeeMonthlySalaryAdjustmentController extends Controller
             'monthly_salary_adjustment_id' => 'required|exists:monthly_salary_adjustments,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'payment_currency' => 'required|string|size:3',
             'calculation_currency' => 'required|string|size:3',
             'amount' => 'required|numeric',
             'includes_income_tax' => 'sometimes|boolean',
