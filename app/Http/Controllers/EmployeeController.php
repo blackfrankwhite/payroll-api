@@ -32,6 +32,7 @@ class EmployeeController extends Controller
             'start_date' => 'sometimes|nullable|date',
             'end_date' => 'sometimes|nullable|date',
             'pension' => 'sometimes|nullable|boolean',
+            'payment_currency' => 'required|string|size:3',
         ]);
 
         if ($validator->fails()) {
@@ -67,6 +68,7 @@ class EmployeeController extends Controller
             'start_date' => 'sometimes|nullable|date',
             'end_date' => 'sometimes|nullable|date',
             'pension' => 'sometimes|nullable|boolean',
+            'payment_currency' => 'sometimes|nullable|string|size:3',
         ]);
 
         if ($validator->fails()) {
