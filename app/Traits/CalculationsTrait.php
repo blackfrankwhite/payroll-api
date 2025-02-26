@@ -2,99 +2,46 @@
 
 namespace App\Traits;
 
-use Carbon\Carbon;
-use Carbon\CarbonPeriod;
-
 trait CalculationsTrait
 {
-    public function calculateBaseAmount(
-        $amount,
-        $includesIncomeTax, 
-        $includesEmployeePension, 
-        $includesCompanyPension,
-        $startDate, // Salary period start
-        $endDate,   // Salary period end
-        $dailySalaryCalculationBase = 'working',
-        $pensionCo = 0.02,
-        $incomeTaxCo = 0.196,
-        $netCo = 0.784
-    ) {
-        if ($includesIncomeTax && $includesEmployeePension) {
-            $base = $amount * 1;
-        } elseif ($includesEmployeePension) {
-            $base = $amount / ($netCo + $pensionCo);
-        } elseif ($includesIncomeTax) {
-            $base = $amount / ($netCo + $incomeTaxCo);
+    /**
+     * Calculate a salary breakdown from a given aggregated gross amount.
+     *
+     * @param float $gross
+     * @param bool  $includes_income_tax
+     * @param bool  $includes_employee_pension
+     * @param bool  $pension  // Employee's pension flag
+     * @return array
+     */
+    public function calculateBreakdown(float $gross, bool $includes_income_tax, bool $includes_employee_pension, bool $pension): array
+    {
+        // Set coefficients based on the employee's pension flag.
+        if ($pension) {
+            $pension_co    = 0.02;
+            $income_tax_co = 0.196;
+            $net_co        = 0.784;
         } else {
-            $base = $amount / $netCo;
+            $pension_co    = 0;
+            $income_tax_co = 0.2;
+            $net_co        = 0.8;
         }
 
-        $baseProrated = $this->calculateProratedSalary($base, $startDate, $endDate, $dailySalaryCalculationBase);
-
-        return $this->calculateFromBase($baseProrated, $pensionCo, $incomeTaxCo, $netCo);
-    }
-
-    private function calculateFromBase($base, $pensionCo, $incomeTaxCo, $netCo)
-    {
-        $pension = $base * $pensionCo;
-        $incomeTax = $base * $incomeTaxCo;
-        $net = $base * $netCo;
+        // Determine the base amount.
+        if ($includes_income_tax && $includes_employee_pension) {
+            $base = $gross;
+        } elseif ($includes_employee_pension) {
+            $base = $gross / ($net_co + $pension_co);
+        } elseif ($includes_income_tax) {
+            $base = $gross / ($net_co + $income_tax_co);
+        } else {
+            $base = $gross / $net_co;
+        }
 
         return [
-            'base' => $base,
-            'pension' => $pension,
-            'income_tax' => $incomeTax,
-            'net' => $net
+            'base'        => round($base, 2),
+            'pension'     => round($base * $pension_co, 2),
+            'income_tax'  => round($base * $income_tax_co, 2),
+            'net'         => round($base * $net_co, 2),
         ];
     }
-
-    private function calculateProratedSalary($baseSalary, $startDate, $endDate, $dailySalaryCalculationBase)
-    {
-        $start = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-    
-        // Get total days in the full month
-        $monthDays = Carbon::parse($startDate)->daysInMonth;
-    
-        // Get actual days in the salary period
-        $periodDays = $start->diffInDays($end) + 1;
-    
-        if ($dailySalaryCalculationBase === 'working') {
-            // Clone to prevent modification of original start date
-            $fullMonthStart = (clone $start)->startOfMonth();
-            $fullMonthEnd = (clone $start)->endOfMonth();
-    
-            // Count only working days (excluding weekends)
-            $workingDaysInMonth = $this->countWorkingDays($fullMonthStart, $fullMonthEnd);
-            $workingDaysInPeriod = $this->countWorkingDays($start, $end);
-    
-            if ($workingDaysInMonth > 0) {
-                return ($baseSalary / $workingDaysInMonth) * $workingDaysInPeriod;
-            }
-        } else {
-            // Use calendar days
-            return ($baseSalary / $monthDays) * $periodDays;
-        }
-    
-        return 0; // Fallback if no valid working days are found
-    }
-    
-    private function countWorkingDays($start, $end)
-    {
-        $period = CarbonPeriod::create($start, $end);
-        $workingDays = 0;
-    
-        foreach ($period as $date) {
-            if (!$this->isWeekend($date)) {
-                $workingDays++;
-            }
-        }
-    
-        return $workingDays;
-    }
-    
-    private function isWeekend($date)
-    {
-        return in_array($date->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY]);
-    }    
 }

@@ -171,26 +171,40 @@ return new class extends Migration {
             END;
         ");
 
-        // 4. Create calculate_salary_breakdown function
         DB::unprepared("DROP FUNCTION IF EXISTS calculate_salary_breakdown;");
+
         DB::unprepared("
             CREATE FUNCTION calculate_salary_breakdown(
                 prorated_salary DECIMAL(18,2),
                 includes_income_tax BOOLEAN,
-                includes_employee_pension BOOLEAN
+                includes_employee_pension BOOLEAN,
+                has_pension BOOLEAN
             ) 
             RETURNS JSON
             DETERMINISTIC
             BEGIN
-                DECLARE pension_co DECIMAL(5,4) DEFAULT 0.02;
-                DECLARE income_tax_co DECIMAL(5,4) DEFAULT 0.196;
-                DECLARE net_co DECIMAL(5,4) DEFAULT 0.784;
+                -- Declare all variables at the beginning
+                DECLARE pension_co DECIMAL(5,4);
+                DECLARE income_tax_co DECIMAL(5,4);
+                DECLARE net_co DECIMAL(5,4);
                 DECLARE base_salary DECIMAL(18,6);
                 DECLARE pension DECIMAL(18,6);
                 DECLARE income_tax DECIMAL(18,6);
                 DECLARE net DECIMAL(18,6);
                 DECLARE result JSON;
-                
+
+                -- Adjust coefficients based on has_pension
+                IF has_pension THEN
+                    SET pension_co = 0.02;
+                    SET income_tax_co = 0.196;
+                    SET net_co = 0.784;
+                ELSE
+                    SET pension_co = 0;
+                    SET income_tax_co = 0.2;
+                    SET net_co = 0.8;
+                END IF;
+
+                -- Determine base salary based on included deductions
                 IF includes_income_tax AND includes_employee_pension THEN
                     SET base_salary = prorated_salary;
                 ELSEIF includes_employee_pension THEN
@@ -200,18 +214,20 @@ return new class extends Migration {
                 ELSE
                     SET base_salary = prorated_salary / net_co;
                 END IF;
-                
+
+                -- Calculate individual deductions
                 SET pension = base_salary * pension_co;
                 SET income_tax = base_salary * income_tax_co;
                 SET net = base_salary * net_co;
-                
+
+                -- Create JSON response
                 SET result = JSON_OBJECT(
                     'base', ROUND(base_salary, 2),
                     'pension', ROUND(pension, 2),
                     'income_tax', ROUND(income_tax, 2),
                     'net', ROUND(net, 2)
                 );
-                
+
                 RETURN result;
             END;
         ");

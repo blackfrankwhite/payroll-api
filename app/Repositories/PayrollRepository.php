@@ -13,6 +13,7 @@ class PayrollRepository
      * @param  string  $startDate
      * @param  string  $endDate
      * @param  bool    $prorateAdjustments
+     * @param  bool    $regularAdjustments
      * @return array
      */
     public function getPayrollData(array $employeeIDs, $startDate, $endDate, $prorateAdjustments, $regularAdjustments)
@@ -106,7 +107,8 @@ class PayrollRepository
                         ) AS DECIMAL(18,2)
                     ),
                     salaries.includes_income_tax,
-                    salaries.includes_employee_pension
+                    salaries.includes_employee_pension,
+                    employees.pension
                 ) AS salary_breakdown
             ", [
                 $startDate,   
@@ -139,6 +141,7 @@ class PayrollRepository
      * @param  array   $employeeIDs
      * @param  string  $startDate
      * @param  string  $endDate
+     * @param  array   $adjusmentIDs
      * @return array
      */
     private function getProratedAdjustments(array $employeeIDs, $startDate, $endDate, $adjusmentIDs)
@@ -153,7 +156,8 @@ class PayrollRepository
                     s.employee_id, 
                     GREATEST(s.start_date, e.start_date, ?) AS salary_start, 
                     LEAST(COALESCE(s.end_date, e.end_date, ?), ?) AS salary_end, 
-                    s.daily_salary_calculation_base
+                    s.daily_salary_calculation_base,
+                    e.pension
                 FROM salaries s
                 JOIN employees e 
                     ON s.employee_id = e.id
@@ -213,7 +217,8 @@ class PayrollRepository
                         ) AS DECIMAL(18,2)
                     ),
                     ap.includes_income_tax,
-                    ap.includes_employee_pension
+                    ap.includes_employee_pension,
+                    sp.pension
                 ) AS breakdown
             FROM adjustment_periods ap
             JOIN salary_periods sp 
@@ -237,6 +242,7 @@ class PayrollRepository
      * @param  array   $employeeIDs
      * @param  string  $startDate
      * @param  string  $endDate
+     * @param  array   $adjusmentIDs
      * @return array
      */
     private function getNonProratedAdjustments(array $employeeIDs, $startDate, $endDate, $adjusmentIDs)
@@ -257,33 +263,33 @@ class PayrollRepository
                     GREATEST(emsa.start_date, ?, e.start_date)
                 ) / 30.0) AS months_in_period,
         
-                calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension) as breakdown,
+                calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension, e.pension) as breakdown,
         
                 JSON_SET(
-                    calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension),
+                    calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension, e.pension),
                     '$.base', JSON_UNQUOTE(JSON_EXTRACT(
-                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.base'
+                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension, e.pension), '$.base'
                     )) * FLOOR(DATEDIFF(
                         LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
                         GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0),
                     
                     '$.net', JSON_UNQUOTE(JSON_EXTRACT(
-                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.net'
+                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension, e.pension), '$.net'
                     )) * FLOOR(DATEDIFF(
                         LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
                         GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0),
                     
                     '$.pension', JSON_UNQUOTE(JSON_EXTRACT(
-                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.pension'
+                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension, e.pension), '$.pension'
                     )) * FLOOR(DATEDIFF(
                         LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
                         GREATEST(emsa.start_date, ?, e.start_date)
                     ) / 30.0),
         
                     '$.income_tax', JSON_UNQUOTE(JSON_EXTRACT(
-                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension), '$.income_tax'
+                        calculate_salary_breakdown(emsa.amount, emsa.includes_income_tax, emsa.includes_employee_pension, e.pension), '$.income_tax'
                     )) * FLOOR(DATEDIFF(
                         LEAST(COALESCE(emsa.end_date, ?), ?, e.end_date),
                         GREATEST(emsa.start_date, ?, e.start_date)
