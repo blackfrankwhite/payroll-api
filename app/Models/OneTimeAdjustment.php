@@ -20,6 +20,11 @@ class OneTimeAdjustment extends Model
         'description',
     ];
 
+    protected $casts = [
+        'includes_income_tax' => 'boolean',
+        'includes_employee_pension' => 'boolean',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);

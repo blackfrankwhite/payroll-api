@@ -52,7 +52,7 @@ class OneTimeAdjustmentRepository
     public function getAllByCompany(int $companyId)
     {
         return OneTimeAdjustment::join('employees', 'one_time_adjustments.employee_id', '=', 'employees.id')
-            ->select('one_time_adjustments.*')            
+            ->select('one_time_adjustments.*', 'employees.name as employee_name', 'employees.surname as employee_surname')            
             ->where('employees.company_id', $companyId)
             ->get();
     }

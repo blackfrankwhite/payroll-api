@@ -29,7 +29,7 @@ class OneTimeAdjustmentController extends Controller
     public function store(Request $request, $employeeID)
     {
         $validator = \Validator::make($request->all(), [
-            'type'                      => 'nullable|string',
+            'type'                      => 'required|in:benefit,deduction',
             'amount'                    => 'required|numeric',
             'calculation_currency'      => 'required|string|size:3',
             'includes_income_tax'       => 'required|boolean',
@@ -67,7 +67,7 @@ class OneTimeAdjustmentController extends Controller
     public function update(Request $request, $employeeID, $id)
     {
         $validator = \Validator::make($request->all(), [
-            'type'                      => 'sometimes|nullable|string',
+            'type'                      => 'sometimes|in:benefit,deduction',
             'amount'                    => 'sometimes|numeric',
             'calculation_currency'      => 'sometimes|string|size:3',
             'includes_income_tax'       => 'sometimes|boolean',
