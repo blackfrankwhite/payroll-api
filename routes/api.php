@@ -42,8 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
             });
     
             Route::apiResource('{employeeID}/monthly-salary-adjustments', EmployeeMonthlySalaryAdjustmentController::class);
-            Route::apiResource('{employeeID}/one-time-adjustments', \App\Http\Controllers\OneTimeAdjustmentController::class);
-    
+            Route::apiResource('{employeeID}/one-time-adjustments', OneTimeAdjustmentController::class);    
         });
+
+        Route::get('one-time-adjustments', [OneTimeAdjustmentController::class, 'byCompany']);
     });
 });

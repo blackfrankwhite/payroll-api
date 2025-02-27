@@ -3,14 +3,17 @@
 namespace App\Services;
 
 use App\Repositories\OneTimeAdjustmentRepository;
+use App\Repositories\CompanyUserRepository;
 
 class OneTimeAdjustmentService
 {
     protected $repository;
+    protected $companyUserRepository;
 
-    public function __construct(OneTimeAdjustmentRepository $repository)
+    public function __construct(OneTimeAdjustmentRepository $repository, CompanyUserRepository $companyUserRepository)
     {
         $this->repository = $repository;
+        $this->companyUserRepository = $companyUserRepository;        
     }
 
     /**
@@ -51,5 +54,12 @@ class OneTimeAdjustmentService
     public function delete(int $id)
     {
         return $this->repository->delete($id);
+    }
+
+    public function getAllByCompany(int $userID)
+    {
+        $companyUser = $this->companyUserRepository->getCompanyUserByUserId($userID);
+
+        return $this->repository->getAllByCompany($companyUser->id);
     }
 }

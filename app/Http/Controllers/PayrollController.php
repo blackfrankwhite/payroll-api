@@ -17,11 +17,12 @@ class PayrollController extends Controller
     public function calculatePayroll(Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'employee_ids' => 'required|array',
-            'prorate_adjustments' => 'sometimes|nullable|array',
-            'regular_adjustments' => 'sometimes|nullable|array',
+            'start_date'              => 'required|date',
+            'end_date'                => 'required|date|after_or_equal:start_date',
+            'employee_ids'            => 'required|array',
+            'prorate_adjustments'     => 'sometimes|nullable|array',
+            'regular_adjustments'     => 'sometimes|nullable|array',
+            'one_time_deduction_ids'  => 'sometimes|nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -36,13 +37,15 @@ class PayrollController extends Controller
         $employeeIDs = $request->input('employee_ids');
         $prorateAdjustments = $request->input('prorate_adjustments') ?? [];
         $regularAdjustments = $request->input('regular_adjustments') ?? [];
+        $oneTimeDeductionIDs = $request->input('one_time_deduction_ids') ?? [];
 
         $payrollData = $this->payrollService->calculatePayroll(
             $employeeIDs, 
             $startDate, 
             $endDate, 
             $prorateAdjustments,
-            $regularAdjustments
+            $regularAdjustments,
+            $oneTimeDeductionIDs
         );
 
         return response()->json($payrollData);

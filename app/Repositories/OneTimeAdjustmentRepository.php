@@ -48,4 +48,12 @@ class OneTimeAdjustmentRepository
         $adjustment = $this->find($id);
         return $adjustment->delete();
     }
+
+    public function getAllByCompany(int $companyId)
+    {
+        return OneTimeAdjustment::join('employees', 'one_time_adjustments.employee_id', '=', 'employees.id')
+            ->select('one_time_adjustments.*')            
+            ->where('employees.company_id', $companyId)
+            ->get();
+    }
 }

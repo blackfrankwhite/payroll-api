@@ -96,4 +96,10 @@ class OneTimeAdjustmentController extends Controller
         $this->service->delete($id);
         return response()->json(['message' => 'Deleted successfully'], 200);
     }
+
+    public function byCompany(Request $request)
+    {
+        $adjustments = $this->service->getAllByCompany($request->user()->id);
+        return response()->json($adjustments, 200);
+    }
 }
