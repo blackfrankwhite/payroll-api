@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\ValidateEmployeeOwnership;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\EmployeeController;
@@ -9,7 +10,7 @@ use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\MonthlySalaryAdjustmentController;
 use App\Http\Controllers\EmployeeMonthlySalaryAdjustmentController;
-use App\Http\Middleware\ValidateEmployeeOwnership;
+use App\Http\Controllers\OneTimeAdjustmentController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -41,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
             });
     
             Route::apiResource('{employeeID}/monthly-salary-adjustments', EmployeeMonthlySalaryAdjustmentController::class);
+            Route::apiResource('{employeeID}/one-time-adjustments', \App\Http\Controllers\OneTimeAdjustmentController::class);
     
         });
     });
