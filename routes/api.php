@@ -11,6 +11,7 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\MonthlySalaryAdjustmentController;
 use App\Http\Controllers\EmployeeMonthlySalaryAdjustmentController;
 use App\Http\Controllers\OneTimeAdjustmentController;
+use App\Http\Controllers\TaxExemptionController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -42,7 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
             });
     
             Route::apiResource('{employeeID}/monthly-salary-adjustments', EmployeeMonthlySalaryAdjustmentController::class);
-            Route::apiResource('{employeeID}/one-time-adjustments', OneTimeAdjustmentController::class);    
+            Route::apiResource('{employeeID}/one-time-adjustments', OneTimeAdjustmentController::class);
+            Route::apiResource('{employeeID}/tax-exemptions', TaxExemptionController::class);
         });
 
         Route::get('one-time-adjustments', [OneTimeAdjustmentController::class, 'byCompany']);
