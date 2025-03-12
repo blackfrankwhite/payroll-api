@@ -19,6 +19,11 @@ class TaxExemption extends Model
         'balance_date',
     ];
 
+    protected $casts = [
+        'renewable' => 'boolean',
+        'constant' => 'boolean',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);
