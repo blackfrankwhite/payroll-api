@@ -17,12 +17,14 @@ class PayrollController extends Controller
     public function calculatePayroll(Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'start_date'              => 'required|date',
-            'end_date'                => 'required|date|after_or_equal:start_date',
-            'employee_ids'            => 'required|array',
-            'prorate_adjustments'     => 'sometimes|nullable|array',
-            'regular_adjustments'     => 'sometimes|nullable|array',
-            'one_time_deduction_ids'  => 'sometimes|nullable|array',
+            'start_date'             => 'required|date',
+            'end_date'               => 'required|date|after_or_equal:start_date',
+            'payment_date'           => 'required|date',
+            'employee_ids'           => 'required|array',
+            'prorate_adjustments'    => 'sometimes|nullable|array',
+            'regular_adjustments'    => 'sometimes|nullable|array',
+            'one_time_benefit_ids'   => 'sometimes|nullable|array',
+            'one_time_deduction_ids' => 'sometimes|nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -32,19 +34,23 @@ class PayrollController extends Controller
             ], 422);
         }
 
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $employeeIDs = $request->input('employee_ids');
-        $prorateAdjustments = $request->input('prorate_adjustments') ?? [];
-        $regularAdjustments = $request->input('regular_adjustments') ?? [];
-        $oneTimeDeductionIDs = $request->input('one_time_deduction_ids') ?? [];
+        $startDate             = $request->input('start_date');
+        $endDate               = $request->input('end_date');
+        $paymentDate           = $request->input('payment_date');
+        $employeeIDs           = $request->input('employee_ids');
+        $prorateAdjustments    = $request->input('prorate_adjustments') ?? [];
+        $regularAdjustments    = $request->input('regular_adjustments') ?? [];
+        $oneTimeBenefitIDs     = $request->input('one_time_benefit_ids') ?? [];
+        $oneTimeDeductionIDs   = $request->input('one_time_deduction_ids') ?? [];
 
         $payrollData = $this->payrollService->calculatePayroll(
             $employeeIDs, 
             $startDate, 
             $endDate, 
+            $paymentDate,
             $prorateAdjustments,
             $regularAdjustments,
+            $oneTimeBenefitIDs,
             $oneTimeDeductionIDs
         );
 
