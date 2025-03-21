@@ -92,6 +92,8 @@ class PayrollService
             $results[$empId]['salary_gross'] += (float) $breakdown['base'];
         }
 
+        dd($results);
+
         // Process Adjustments:
         foreach ($data['adjustments'] as $record) {
             $empId = $record->employee_id;
