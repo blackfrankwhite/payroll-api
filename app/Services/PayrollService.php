@@ -147,8 +147,8 @@ class PayrollService
             );
             $aggregatedBreakdown = $this->calculateBreakdown(
                 $sumAfterAdjustments,
-                $record['includes_income_tax'],
-                $record['includes_employee_pension'],
+                true,
+                true,
                 $record['pension']
             );
 
