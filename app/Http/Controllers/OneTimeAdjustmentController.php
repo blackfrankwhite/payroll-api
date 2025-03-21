@@ -32,8 +32,8 @@ class OneTimeAdjustmentController extends Controller
             'type'                      => 'required|in:benefit,deduction',
             'amount'                    => 'required|numeric',
             'calculation_currency'      => 'required|string|size:3',
-            'includes_income_tax'       => 'required|boolean',
-            'includes_employee_pension' => 'required|boolean',
+            'includes_income_tax'       => 'sometimes|nullable|boolean',
+            'includes_employee_pension' => 'sometimes|nullable|boolean',
             'date'                      => 'required|date',
             'description'               => 'nullable|string',
         ]);
