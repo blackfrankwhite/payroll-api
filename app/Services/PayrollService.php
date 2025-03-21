@@ -92,8 +92,6 @@ class PayrollService
             $results[$empId]['salary_gross'] += (float) $breakdown['base'];
         }
 
-        dd($results);
-
         // Process Adjustments:
         foreach ($data['adjustments'] as $record) {
             $empId = $record->employee_id;
@@ -135,6 +133,8 @@ class PayrollService
         // Finalize each employee's record and apply tax exemption.
         // Index tax exemptions by employee_id.
         $taxExemptions = collect($data['tax_exemptions'])->keyBy('employee_id');
+
+        dd($taxExemptions, $results);
 
         foreach ($results as $empId => $record) {
             $results[$empId]['salary_gross'] = round($record['salary_gross'], 2);
