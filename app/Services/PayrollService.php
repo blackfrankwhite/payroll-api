@@ -167,6 +167,7 @@ class PayrollService
                 } elseif ($taxExemption->amount) {
 
                     $applyPercent = $taxExemption->percent ? $taxExemption->percent : 100;
+                    dd($applyPercent);
                     // Use balance_amount if available, otherwise use amount.
                     $limit = $taxExemption->balance_amount ? $taxExemption->balance_amount : $taxExemption->amount;
                     if ($limit >= $sumAfterAdjustments) {
