@@ -160,6 +160,7 @@ class PayrollService
 
             // Apply tax exemption if available.
             $taxExemption = $taxExemptions->get($empId);
+            dd($taxExemption);
             if ($taxExemption) {
                 if ($taxExemption->constant) {
                     $results[$empId]['sum_net_after_exemption'] = round($results[$empId]['sum_net'] + $results[$empId]['sum_income_tax'], 2);
