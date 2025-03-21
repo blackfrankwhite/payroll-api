@@ -134,8 +134,6 @@ class PayrollService
         // Index tax exemptions by employee_id.
         $taxExemptions = collect($data['tax_exemptions'])->keyBy('employee_id');
 
-        dd($taxExemptions, $results);
-
         foreach ($results as $empId => $record) {
             $results[$empId]['salary_gross'] = round($record['salary_gross'], 2);
             $results[$empId]['sum_benefits_gross'] = round($record['sum_benefits_gross'], 2);
@@ -153,6 +151,8 @@ class PayrollService
                 $record['includes_employee_pension'],
                 $record['pension']
             );
+
+            dd($aggregatedBreakdown);
 
             $results[$empId]['sum_gross']       = $sumAfterAdjustments;
             $results[$empId]['sum_pension']     = $aggregatedBreakdown['pension'];
