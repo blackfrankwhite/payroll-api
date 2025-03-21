@@ -160,7 +160,6 @@ class PayrollService
 
             // Apply tax exemption if available.
             $taxExemption = $taxExemptions->get($empId);
-            dd($taxExemption);
             if ($taxExemption) {
                 if ($taxExemption->constant) {
                     $results[$empId]['sum_net_after_exemption'] = round($results[$empId]['sum_net'] + $results[$empId]['sum_income_tax'], 2);
@@ -168,7 +167,6 @@ class PayrollService
                 } elseif ($taxExemption->amount) {
 
                     $applyPercent = $taxExemption->percent ? $taxExemption->percent : 100;
-                    dd($applyPercent);
                     // Use balance_amount if available, otherwise use amount.
                     $limit = $taxExemption->balance_amount ? $taxExemption->balance_amount : $taxExemption->amount;
                     if ($limit >= $sumAfterAdjustments) {
