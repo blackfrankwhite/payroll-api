@@ -190,6 +190,8 @@ class PayrollService
                             $record['includes_employee_pension'],
                             $record['pension']
                         );
+
+                        dd($L,$X, $exemptedBreakdown, $nonExemptedBreakdown);
                         $nonExemptedNet = $nonExemptedBreakdown['net'];
                         $results[$empId]['sum_net_after_exemption'] = round($exemptedNet + $nonExemptedNet, 2);
                         $results[$empId]['remaining_exemption_limit'] = 0;
