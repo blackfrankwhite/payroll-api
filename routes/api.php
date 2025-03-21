@@ -12,6 +12,8 @@ use App\Http\Controllers\MonthlySalaryAdjustmentController;
 use App\Http\Controllers\EmployeeMonthlySalaryAdjustmentController;
 use App\Http\Controllers\OneTimeAdjustmentController;
 use App\Http\Controllers\TaxExemptionController;
+use App\Http\Controllers\TimeBasedSalaryAdjustmentController;
+use App\Http\Controllers\EmployeeTimeBasedSalaryAdjustmentController;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -25,7 +27,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/calculate', [PayrollController::class, 'calculatePayroll']);
         });
 
+        // Monthly Salary Adjustments routes
         Route::apiResource('monthly-salary-adjustments', MonthlySalaryAdjustmentController::class);
+
+        // New Time-Based Salary Adjustments routes
+        Route::apiResource('time-based-salary-adjustments', TimeBasedSalaryAdjustmentController::class);
 
         Route::prefix('employee')->middleware(ValidateEmployeeOwnership::class)->group(function () {
             Route::post('/', [EmployeeController::class, 'addEmployee']);
@@ -42,11 +48,16 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::delete('{salaryID}', [SalaryController::class, 'destroy']);
             });
     
+            // Monthly salary adjustments for an employee
             Route::apiResource('{employeeID}/monthly-salary-adjustments', EmployeeMonthlySalaryAdjustmentController::class);
+    
+            // New Time-Based salary adjustments for an employee
+            Route::apiResource('{employeeID}/time-based-salary-adjustments', EmployeeTimeBasedSalaryAdjustmentController::class);
+    
             Route::apiResource('{employeeID}/one-time-adjustments', OneTimeAdjustmentController::class);
             Route::apiResource('{employeeID}/tax-exemptions', TaxExemptionController::class);
         });
-
+    
         Route::get('one-time-adjustments', [OneTimeAdjustmentController::class, 'byCompany']);
     });
 });
