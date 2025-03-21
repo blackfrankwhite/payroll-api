@@ -152,7 +152,7 @@ class PayrollService
                 $record['pension']
             );
 
-            dd($aggregatedBreakdown);
+            dd($aggregatedBreakdown, $results);
 
             $results[$empId]['sum_gross']       = $sumAfterAdjustments;
             $results[$empId]['sum_pension']     = $aggregatedBreakdown['pension'];
