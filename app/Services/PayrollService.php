@@ -178,20 +178,19 @@ class PayrollService
                         $X = $sumAfterAdjustments - $L;
                         $exemptedBreakdown = $this->calculateBreakdown(
                             $L,
-                            $record['includes_income_tax'],
-                            $record['includes_employee_pension'],
+                            true,
+                            true,
                             $record['pension']
                         );
                         // For the exempted portion, add both net and income tax.
                         $exemptedNet = ($exemptedBreakdown['net'] + $exemptedBreakdown['income_tax']) * $applyPercent / 100;
                         $nonExemptedBreakdown = $this->calculateBreakdown(
                             $X,
-                            $record['includes_income_tax'],
-                            $record['includes_employee_pension'],
+                            true,
+                            true,
                             $record['pension']
                         );
 
-                        dd($L,$X, $exemptedBreakdown, $nonExemptedBreakdown);
                         $nonExemptedNet = $nonExemptedBreakdown['net'];
                         $results[$empId]['sum_net_after_exemption'] = round($exemptedNet + $nonExemptedNet, 2);
                         $results[$empId]['remaining_exemption_limit'] = 0;
