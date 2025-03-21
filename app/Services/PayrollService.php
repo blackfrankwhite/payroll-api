@@ -164,17 +164,13 @@ class PayrollService
                 if ($taxExemption->constant) {
                     $results[$empId]['sum_net_after_exemption'] = round($results[$empId]['sum_net'] + $results[$empId]['sum_income_tax'], 2);
                     $results[$empId]['remaining_exemption_limit'] = null;
-                } elseif ($taxExemption->percent) {
-                    $results[$empId]['sum_net_after_exemption'] = round(
-                        $results[$empId]['sum_net'] + ($taxExemption->percent / 100 * $results[$empId]['sum_income_tax']),
-                        2
-                    );
-                    $results[$empId]['remaining_exemption_limit'] = null;
                 } elseif ($taxExemption->amount) {
+
+                    $applyPercent = $taxExemption->percent ? $taxExemption->percent : 100;
                     // Use balance_amount if available, otherwise use amount.
                     $limit = $taxExemption->balance_amount ? $taxExemption->balance_amount : $taxExemption->amount;
                     if ($limit >= $sumAfterAdjustments) {
-                        $results[$empId]['sum_net_after_exemption'] = round($results[$empId]['sum_net'] + $results[$empId]['sum_income_tax'], 2);
+                        $results[$empId]['sum_net_after_exemption'] = (round($results[$empId]['sum_net'] + $results[$empId]['sum_income_tax'], 2)) * $applyPercent / 100;
                         $results[$empId]['remaining_exemption_limit'] = round($limit - $sumAfterAdjustments, 2);
                     } else {
                         // When limit is less than or equal to sum_gross:
@@ -187,7 +183,7 @@ class PayrollService
                             $record['pension']
                         );
                         // For the exempted portion, add both net and income tax.
-                        $exemptedNet = $exemptedBreakdown['net'] + $exemptedBreakdown['income_tax'];
+                        $exemptedNet = ($exemptedBreakdown['net'] + $exemptedBreakdown['income_tax']) * $applyPercent / 100;
                         $nonExemptedBreakdown = $this->calculateBreakdown(
                             $X,
                             $record['includes_income_tax'],
