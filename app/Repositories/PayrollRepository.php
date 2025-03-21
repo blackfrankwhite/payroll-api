@@ -98,6 +98,7 @@ class PayrollRepository
         $query = DB::table('one_time_adjustments as eotsa')
             ->join('employees as e', 'eotsa.employee_id', '=', 'e.id')
             ->whereIn('eotsa.employee_id', $employeeIDs)
+            ->whereNull('eotsa.deleted_at')
             ->whereBetween('eotsa.date', [$startDate, $endDate]);
 
         // Apply filtering based on provided benefit and/or deduction IDs.
@@ -284,6 +285,7 @@ class PayrollRepository
                 JOIN employees e 
                     ON a.employee_id = e.id
                 WHERE a.employee_id IN ($employeeIDsString)
+                  AND a.deleted_at IS NULL
                   AND m.id in ($adjusmentIDsString)
                   AND a.start_date <= ? 
                   AND (a.end_date IS NULL OR a.end_date >= ?)
@@ -353,6 +355,7 @@ class PayrollRepository
             ->join('monthly_salary_adjustments as m', 'emsa.monthly_salary_adjustment_id', '=', 'm.id')
             ->join('employees as e', 'emsa.employee_id', '=', 'e.id')
             ->whereIn('m.id', $adjusmentIDs)
+            ->whereNull('emsa.deleted_at')
             ->selectRaw("
                 emsa.employee_id,
         
