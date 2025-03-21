@@ -60,7 +60,10 @@ class PayrollRepository
         $taxExemptions = DB::table('tax_exemptions')
             ->whereIn('employee_id', $employeeIDs)
             ->where('start_date', '<=', $paymentDate)
-            ->where('end_date', '>=', $paymentDate)
+            ->where(function ($query) use ($paymentDate) {
+                $query->where('end_date', '>=', $paymentDate)
+                    ->orWhereNull('end_date');
+            })
             ->get();
         
         return [

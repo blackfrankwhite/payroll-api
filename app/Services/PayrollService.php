@@ -50,8 +50,6 @@ class PayrollService
             $oneTimeDeductionIDs,
             $paymentDate
         );
-
-        dd($data);
         
         $results = [];
 
