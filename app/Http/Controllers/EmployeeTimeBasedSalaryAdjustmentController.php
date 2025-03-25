@@ -23,8 +23,8 @@ class EmployeeTimeBasedSalaryAdjustmentController extends Controller
     {
         $validator = \Validator::make($request->all(), [
             'time_based_salary_adjustment_id' => 'required|exists:time_based_salary_adjustments,id',
-            'minutes'                         => 'required|integer',
-            'date'                            => 'required|date',
+            'amount'                         => 'required|integer',
+            'dates'                            => 'required|array',
         ]);
 
         if ($validator->fails()) {
@@ -42,8 +42,8 @@ class EmployeeTimeBasedSalaryAdjustmentController extends Controller
     public function update(Request $request, $employeeId, $id)
     {
         $validator = \Validator::make($request->all(), [
-            'minutes' => 'sometimes|integer',
-            'date'    => 'sometimes|date',
+            'amount' => 'sometimes|integer',
+            'dates'    => 'sometimes|array',
         ]);
 
         if ($validator->fails()) {

@@ -48,7 +48,7 @@ class EmployeeTimeBasedSalaryAdjustmentService
         if (!$employee) {
             return response()->json([
                 'message' => 'Validation Error',
-                'errors' => ['employee_id' => 'This employee does not belong to your company.']
+                'errors'  => ['employee_id' => 'This employee does not belong to your company.']
             ], 422);
         }
 
@@ -57,7 +57,7 @@ class EmployeeTimeBasedSalaryAdjustmentService
         if (!$adjustment) {
             return response()->json([
                 'message' => 'Validation Error',
-                'errors' => ['time_based_salary_adjustment_id' => 'This time based salary adjustment does not belong to your company.']
+                'errors'  => ['time_based_salary_adjustment_id' => 'This time based salary adjustment does not belong to your company.']
             ], 422);
         }
 

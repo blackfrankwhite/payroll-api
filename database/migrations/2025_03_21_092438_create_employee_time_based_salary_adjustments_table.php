@@ -12,11 +12,9 @@ class CreateEmployeeTimeBasedSalaryAdjustmentsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_id');
             $table->unsignedBigInteger('time_based_salary_adjustment_id');
-            $table->bigInteger('minutes');
-            $table->date('date');
+            $table->bigInteger('amount');
             $table->timestamps();
             $table->softDeletes();
-
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
             $table->foreign('time_based_salary_adjustment_id', 'emp_timeadj_fk')
                 ->references('id')

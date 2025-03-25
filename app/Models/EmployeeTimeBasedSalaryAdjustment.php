@@ -12,8 +12,7 @@ class EmployeeTimeBasedSalaryAdjustment extends Model
     protected $fillable = [
         'employee_id',
         'time_based_salary_adjustment_id',
-        'minutes',
-        'date',
+        'amount'
     ];
 
     public function employee()
@@ -25,4 +24,9 @@ class EmployeeTimeBasedSalaryAdjustment extends Model
     {
         return $this->belongsTo(TimeBasedSalaryAdjustment::class);
     }
+
+    public function dates()
+    {
+        return $this->hasMany(EmployeeTimeBasedSalaryAdjustmentDate::class);
+    }    
 }

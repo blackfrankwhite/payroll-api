@@ -8,12 +8,12 @@ class EmployeeTimeBasedSalaryAdjustmentRepository
 {
     public function getAllForEmployee(int $companyId, int $employeeId)
     {
-        return EmployeeTimeBasedSalaryAdjustment::join('time_based_salary_adjustments', 'employee_time_based_salary_adjustments.time_based_salary_adjustment_id', '=', 'time_based_salary_adjustments.id')
+        return EmployeeTimeBasedSalaryAdjustment::with('dates')
+            ->join('time_based_salary_adjustments', 'employee_time_based_salary_adjustments.time_based_salary_adjustment_id', '=', 'time_based_salary_adjustments.id')
             ->select(
                 'employee_time_based_salary_adjustments.*', 
                 'time_based_salary_adjustments.name', 
-                'time_based_salary_adjustments.type',
-                'time_based_salary_adjustments.percent'
+                'time_based_salary_adjustments.type'
             )
             ->whereHas('employee', function ($query) use ($companyId) {
                 $query->where('company_id', $companyId);
@@ -24,12 +24,12 @@ class EmployeeTimeBasedSalaryAdjustmentRepository
 
     public function find(int $companyId, int $employeeId, int $id)
     {
-        return EmployeeTimeBasedSalaryAdjustment::join('time_based_salary_adjustments', 'employee_time_based_salary_adjustments.time_based_salary_adjustment_id', '=', 'time_based_salary_adjustments.id')
+        return EmployeeTimeBasedSalaryAdjustment::with('dates')
+            ->join('time_based_salary_adjustments', 'employee_time_based_salary_adjustments.time_based_salary_adjustment_id', '=', 'time_based_salary_adjustments.id')
             ->select(
                 'employee_time_based_salary_adjustments.*', 
                 'time_based_salary_adjustments.name', 
-                'time_based_salary_adjustments.type',
-                'time_based_salary_adjustments.percent'
+                'time_based_salary_adjustments.type'
             )
             ->whereHas('employee', function ($query) use ($companyId) {
                 $query->where('company_id', $companyId);
@@ -41,20 +41,44 @@ class EmployeeTimeBasedSalaryAdjustmentRepository
 
     public function create(int $companyId, int $employeeId, array $data)
     {
+        // Ensure the main record gets the employee_id.
         $data['employee_id'] = $employeeId;
-        return EmployeeTimeBasedSalaryAdjustment::create($data);
+        // Extract the dates array and remove it from $data.
+        $dates = $data['dates'];
+        unset($data['dates']);
+
+        $adjustment = EmployeeTimeBasedSalaryAdjustment::create($data);
+
+        // Insert each date into the related table.
+        foreach ($dates as $date) {
+            $adjustment->dates()->create(['date' => $date]);
+        }
+
+        return $adjustment->load('dates');
     }
 
     public function update(int $companyId, int $employeeId, int $id, array $data)
     {
         $adjustment = $this->find($companyId, $employeeId, $id);
+        if (isset($data['dates'])) {
+            $dates = $data['dates'];
+            unset($data['dates']);
+            // Remove old date records.
+            $adjustment->dates()->delete();
+            // Insert new dates.
+            foreach ($dates as $date) {
+                $adjustment->dates()->create(['date' => $date]);
+            }
+        }
         $adjustment->update($data);
-        return $adjustment;
+        return $adjustment->load('dates');
     }
 
     public function delete(int $companyId, int $employeeId, int $id)
     {
         $adjustment = $this->find($companyId, $employeeId, $id);
+        // Delete associated dates first.
+        $adjustment->dates()->delete();
         $adjustment->delete();
     }
 }

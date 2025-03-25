@@ -22,9 +22,10 @@ class TimeBasedSalaryAdjustmentController extends Controller
     public function store(Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'name'    => 'required|string',
-            'type'    => 'required|in:benefit,deduction',
-            'percent' => 'required|numeric',
+            'name'            => 'required|string',
+            'type'            => 'required|in:benefit,deduction',
+            'percent'         => 'required|numeric',
+            'time_based_type' => 'required|in:day,hour,minute',
         ]);
 
         if ($validator->fails()) {
@@ -42,9 +43,10 @@ class TimeBasedSalaryAdjustmentController extends Controller
     public function update(Request $request, $id)
     {
         $validator = \Validator::make($request->all(), [
-            'name'    => 'sometimes|string',
-            'type'    => 'sometimes|in:benefit,deduction',
-            'percent' => 'sometimes|numeric',
+            'name'            => 'sometimes|string',
+            'type'            => 'sometimes|in:benefit,deduction',
+            'percent'         => 'sometimes|numeric',
+            'time_based_type' => 'sometimes|in:day,hour,minute',
         ]);
 
         if ($validator->fails()) {
